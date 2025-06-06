@@ -136,3 +136,5 @@ bin/
 
 # license finder
 lf_logs/
+
+.vscode/launch.json
