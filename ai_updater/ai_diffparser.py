@@ -2,8 +2,7 @@ import os
 from google import genai
 from google.genai import types
 
-client = genai.Client(api_key=os.getenv("AIzaSyCxoymcjl3WOdjFPQd9EHZl_r44K6LxA6k")) #REMEMBER TO DELETE
-print("YOUR API KEY IS STILL SITTING HERE REMEMBER TO DELETE IT")
+client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
 
 zsh_diff_output = os.getenv("ZSH_DIFF_OUTPUT")
 
