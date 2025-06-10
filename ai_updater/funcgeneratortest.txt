@@ -1,0 +1,139 @@
+Here are the implementations for the `GetKinematics` method across the specified files for the Viam Gripper component, following the provided patterns and considering the `common.v1` request/response types.
+
+---
+
+### 1. `src/viam/components/gripper/gripper.py` (Abstract Method)
+
+This file defines the abstract interface for the `Gripper` component, including the new `get_kinematics` method.
+
+```python
+import abc
+from typing import Any, Dict, Optional, Tuple
+
+from viam.components.component import Component
+# Assuming KinematicsFileFormat is defined in common.v1.common_pb2
+from viam.proto.common import KinematicsFileFormat
+
+
+class Gripper(Component):
+    """
+    Gripper represents a physical robotic gripper.
+
+    This acts as an abstract base class for any drivers representing grippers.
+    This class alone cannot be instantiated.
+    """
+
+    @abc.abstractmethod
+    async def get_kinematics(
+        self, *, extra: Optional[Dict[str, Any]] = None, timeout: Optional[float] = None, **kwargs
+    ) -> Tuple[KinematicsFileFormat.ValueType, bytes]:
+        """
+        Get the kinematics data for the gripper.
+
+        Args:
+            extra (Optional[Dict[str, Any]]): A dictionary of additional arguments to pass to the method.
+            timeout (Optional[float]): The amount of time to wait for the method to complete.
+
+        Returns:
+            Tuple[KinematicsFileFormat.ValueType, bytes]: A tuple containing two values:
+            the first [0] is the format of the kinematics data (e.g., URDF, HRDF),
+            and the second [1] is the raw kinematics data itself.
+        """
+        ...
+```
+
+---
+
+### 2. `src/viam/components/gripper/client.py` (Client Implementation)
+
+This file provides the gRPC client implementation for the `Gripper` component, allowing users to call `get_kinematics`.
+
+```python
+from typing import Any, Dict, Optional, Tuple
+
+from grpclib.client import Channel
+
+from viam.components.gripper.gripper import Gripper
+# Import common proto messages for GetKinematicsRequest/Response and KinematicsFileFormat
+from viam.proto.common import GetKinematicsRequest, GetKinematicsResponse, KinematicsFileFormat
+# Import the gRPC stub for the Gripper service (assuming GetKinematics is exposed here)
+from viam.proto.component.gripper.v1.gripper_grpc import GripperServiceStub
+from viam.utils import dict_to_struct
+
+
+class GripperClient(Gripper):
+    """
+    GripperClient is gRPC client for the Gripper component.
+    """
+
+    def __init__(self, name: str, channel: Channel):
+        self.name = name
+        # The client attribute refers to the gRPC stub for gripper-specific methods.
+        # Although GetKinematics uses common.v1 proto, the prompt implies it's handled
+        # by the component's specific service, thus calling this stub.
+        self.client = GripperServiceStub(channel)
+
+    async def get_kinematics(
+        self, *, extra: Optional[Dict[str, Any]] = None, timeout: Optional[float] = None, **kwargs
+    ) -> Tuple[KinematicsFileFormat.ValueType, bytes]:
+        md = kwargs.get("metadata", self.Metadata()).proto
+        request = GetKinematicsRequest(name=self.name, extra=dict_to_struct(extra))
+        # Call the GetKinematics method on the gRPC client stub
+        response: GetKinematicsResponse = await self.client.GetKinematics(request, timeout=timeout, metadata=md)
+        return (response.format, response.kinematics_data)
+
+```
+
+---
+
+### 3. `src/viam/components/gripper/service.py` (Service Implementation)
+
+This file implements the gRPC service for the `Gripper` component, handling incoming `GetKinematicsRequest` calls.
+
+```python
+from grpclib.server import Stream
+
+from viam.components.gripper.gripper import Gripper
+from viam.resource.rpc_service_base import ResourceRPCServiceBase
+from viam.utils import struct_to_dict
+
+# Import common proto messages as GetKinematicsRequest/Response are from common.v1
+from viam.proto.common import GetKinematicsRequest, GetKinematicsResponse, KinematicsFileFormat
+
+
+class GripperService(ResourceRPCServiceBase):
+    """
+    GripperService implements gRPC service for the Gripper component.
+    """
+
+    RESOURCE_TYPE = Gripper
+
+    async def GetKinematics(self, stream: Stream[GetKinematicsRequest, GetKinematicsResponse]) -> None:
+        """
+        Handles the GetKinematics RPC call for a Gripper.
+        """
+        request = await stream.recv_message()
+        assert request is not None
+        name = request.name
+
+        # Retrieve the Gripper resource instance from the manager
+        gripper = self.get_resource(name)
+        if not isinstance(gripper, Gripper):
+            # This should ideally not happen if get_resource is type-safe
+            # but serves as a robust check.
+            raise TypeError(f"Resource '{name}' is not a Gripper. Found {type(gripper).__name__}")
+
+        # Extract timeout from the gRPC stream deadline, if available
+        timeout = stream.deadline.time_remaining() if stream.deadline else None
+
+        # Call the underlying abstract method on the Gripper instance
+        format, kinematics_data = await gripper.get_kinematics(
+            extra=struct_to_dict(request.extra), timeout=timeout, metadata=stream.metadata
+        )
+
+        # Construct and send the response
+        response = GetKinematicsResponse(format=format, kinematics_data=kinematics_data)
+        await stream.send_message(response)
+
+    # Other gripper-specific RPC methods (e.g., Open, Grab, Stop) would typically be defined here as well.
+```

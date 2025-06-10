@@ -1,0 +1,7 @@
+#Overview:
+
+    #Step 1: Get the git diff of the automated proto update PR
+    #Step 2: pass the diff to a python script that will parse it and see what methods were added (possibly with AI)
+    #Step 3: Pass the specific functions to be implemented to a different python script that calls AI with a huge amount of context
+    #Step 4: AI generated code is committed to the repo / a new PR is opened
+
