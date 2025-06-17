@@ -1,114 +1,106 @@
 """Prompt for analyzing proto changes and identifying required implementations."""
 
 DIFF_PARSER_PROMPT = '''
-Your task is to analyze the changes in proto definitions and identify which methods need to be implemented across the component files.
+You are an expert in analyzing protobuf definitions and determining required implementations in a Viam robotics SDK. The Viam SDK is a comprehensive framework for building and managing robotic systems, with the following rough architecture:
+
+Here is a rough outline of the SDK as well as full included files so you can understand its architecture and functionality:
+=== SDK ARCHITECTURE ===
+1. Root Directory (src/viam/):
+   - Core SDK functionality and utilities
+   - Contains essential base files:
+     * __init__.py: Package initialization and exports
+     * errors.py: Error definitions and handling
+     * logging.py: Logging configuration and utilities
+     * operations.py: Core operation implementations
+     * sessions_client.py: Session management
+     * streams.py: Streaming functionality
+     * utils.py: Common utility functions
+   Full files from this directory for context and structure:
+   {root_context}
+
+2. Components (src/viam/components/):
+   - Core building blocks of robotic systems (motors, cameras, arms, etc.)
+   - Each component has a standard interface defined in proto files
+   - Implemented across three layers:
+     * Abstract base classes (component.py)
+     * Client implementations (client.py)
+     * Service implementations (service.py)
+   Full files from this subdirectory for context and structure:
+   {components_context}
+
+3. Proto (src/viam/proto/):
+   - Contains Protocol Buffer definitions
+   - Defines service interfaces and message types
+   - Used for RPC communication between clients and services
+   - Includes both component-specific and common message types
+
+   These files are automatically generated and should not be modified manually, so you should not need to reference them for context.
+
+4. Resource (src/viam/resource/):
+   - Manages the fundamental units of the SDK
+   - Handles resource discovery, configuration, and lifecycle
+   - Provides base classes for all SDK resources
+   - Manages resource dependencies and relationships
+   Full files from this subdirectory for context and structure:
+   {resource_context}
+
+5. Robot (src/viam/robot/):
+   - Core robot management functionality
+   - Handles robot configuration and setup
+   - Manages resource discovery and registration
+   - Provides robot client and service implementations
+   Full files from this subdirectory for context and structure:
+   {robot_context}
+
+6. RPC (src/viam/rpc/):
+   - Implements the RPC communication layer
+   - Handles both streaming and unary RPCs
+   - Manages authentication and metadata
+   - Provides utilities for RPC communication
+   Full files from this subdirectory for context and structure:
+   {rpc_context}
+
+7. Services (src/viam/services/):
+   - Higher-level services built on top of components
+   - Includes services like motion planning, navigation
+   - Provides service-specific clients and implementations
+   - Handles complex operations across multiple components
+   Full files from this subdirectory for context and structure:
+   {services_context}
+
+8. Module (src/viam/module/):
+   - Supports modular, reusable robot configurations
+   - Enables custom component implementations
+   - Handles module packaging and distribution
+   - Manages module dependencies and versioning
+   Full files from this subdirectory for context and structure:
+   {module_context}
+
+9. Media (src/viam/media/):
+   - Handles media-related functionality
+   - Manages image and video processing
+   - Provides utilities for media streaming
+   - Handles media format conversions
+   Full files from this subdirectory for context and structure:
+   {media_context}
+
+10. App (src/viam/app/):
+    - Application-level functionality
+    - Handles app configuration and setup
+    - Provides utilities for app development
+    - Manages app-specific resources
+    Full files from this subdirectory for context and structure:
+    {app_context}
+
+Your task is to analyze the changes in proto definitions and identify which new methods or other changes need to be implemented across the SDK files.
 Here are the changes to the proto files (provided as a git diff):
 {zsh_diff_output}
 
-For each changed/added RPC endpoint:
-1. Identify the component type (e.g., Gripper, Arm, Camera etc.)
-2. List which files need added implementations:
-   - Abstract method in <component>.py
-   - Client implementation in client.py
-   - Service implementation in service.py
-   - Necessary imports in __init__.py
-3. Note the request/response message types and any special data types (e.g., bytes, enums)
+Based on these changes and your understanding of the codebase, output the paths of the files that need to be updated (you will never
+need to create entirely new files), and what needs to be implemented within that file. These instructions will then be passed to another
+Gemini LLM which will implement the changes, so make your instructions as relevant and detailed as necessary for another Gemini LLM to interpret. Include
+as much detail as is necessary so that the other LLM can implement the changes when given the original files and the instructions.
 
-In your response provide the following:
-
-=== FILES_TO_UPDATE ===
-- src/viam/components/<component>/<component>.py
-- src/viam/components/<component>/client.py
-- src/viam/components/<component>/service.py
-- src/viam/components/<component>/__init__.py
-
-=== IMPLEMENTATION_DETAILS ===
-COMPONENT: <component_name>
-NEW METHOD: <method_name>
-FILES NEEDING IMPLEMENTATION:
-- <file_path>: Abstract method
-- <file_path>: Client implementation
-- <file_path>: Service implementation
-- <file_path>: Export in __init__.py
-REQUEST TYPE: <request_message_type>
-RESPONSE TYPE: <response_message_type>
-SPECIAL TYPES: <list any special data types or enums used>
-
-Here are examples of responses corresponding to existing implementations to help identify patterns:
-
-Example 1 - Simple boolean response (Gripper):
-=== FILES_TO_UPDATE ===
-- src/viam/components/gripper/gripper.py
-- src/viam/components/gripper/client.py
-- src/viam/components/gripper/service.py
-- src/viam/components/gripper/__init__.py
-
-=== IMPLEMENTATION_DETAILS ===
-COMPONENT: Gripper
-NEW METHOD: Grab
-FILES NEEDING IMPLEMENTATION:
-- src/viam/components/gripper/gripper.py: Abstract method
-- src/viam/components/gripper/client.py: Client implementation
-- src/viam/components/gripper/service.py: Service implementation
-- src/viam/components/gripper/__init__.py: Relevant imports
-REQUEST TYPE: component.gripper.v1.gripper_pb2.GrabRequest
-RESPONSE TYPE: component.gripper.v1.gripper_pb2.GrabResponse
-SPECIAL TYPES: bool (success field)
-
-Example 2 - Numeric parameter (Motor):
-=== FILES_TO_UPDATE ===
-- src/viam/components/motor/motor.py
-- src/viam/components/motor/client.py
-- src/viam/components/motor/service.py
-- src/viam/components/motor/__init__.py
-
-=== IMPLEMENTATION_DETAILS ===
-COMPONENT: Motor
-NEW METHOD: SetPower
-FILES NEEDING IMPLEMENTATION:
-- src/viam/components/motor/motor.py: Abstract method
-- src/viam/components/motor/client.py: Client implementation
-- src/viam/components/motor/service.py: Service implementation
-- src/viam/components/motor/__init__.py: Relevant imports
-REQUEST TYPE: component.motor.v1.motor_pb2.SetPowerRequest
-RESPONSE TYPE: component.motor.v1.motor_pb2.SetPowerResponse
-SPECIAL TYPES: float64 (power_pct field)
-
-Example 3 - Complex return type (Camera):
-=== FILES_TO_UPDATE ===
-- src/viam/components/camera/camera.py
-- src/viam/components/camera/client.py
-- src/viam/components/camera/service.py
-- src/viam/components/camera/__init__.py
-
-=== IMPLEMENTATION_DETAILS ===
-COMPONENT: Camera
-NEW METHOD: GetPointCloud
-FILES NEEDING IMPLEMENTATION:
-- src/viam/components/camera/camera.py: Abstract method
-- src/viam/components/camera/client.py: Client implementation
-- src/viam/components/camera/service.py: Service implementation
-- src/viam/components/camera/__init__.py: Relevant imports
-REQUEST TYPE: component.camera.v1.camera_pb2.GetPointCloudRequest
-RESPONSE TYPE: component.camera.v1.camera_pb2.GetPointCloudResponse
-SPECIAL TYPES: bytes (point_cloud field), string (mime_type field)
-
-Example 4 - Multiple return values (Arm):
-=== FILES_TO_UPDATE ===
-- src/viam/components/arm/arm.py
-- src/viam/components/arm/client.py
-- src/viam/components/arm/service.py
-- src/viam/components/arm/__init__.py
-
-=== IMPLEMENTATION_DETAILS ===
-COMPONENT: Arm
-NEW METHOD: GetJointPositions
-FILES NEEDING IMPLEMENTATION:
-- src/viam/components/arm/arm.py: Abstract method
-- src/viam/components/arm/client.py: Client implementation
-- src/viam/components/arm/service.py: Service implementation
-- src/viam/components/arm/__init__.py: Relevant imports
-REQUEST TYPE: component.arm.v1.arm_pb2.GetJointPositionsRequest
-RESPONSE TYPE: component.arm.v1.arm_pb2.GetJointPositionsResponse
-SPECIAL TYPES: JointPositions (positions field)
+IMPORTANT: THE ORIGINAL FUNCTIONALITY OF THE SDK MUST REMAIN EXACTLY INTACT. THESE CHANGES WILL BE DIRECTLY REINSERTED INTO THE CODEBASE.
+ONLY INCLUDE IMPLEMENTATION DETAILS IN YOUR RESPONSE THAT ARE ABSOLUTELY NECESSARY. DO NOT INCLUDE EXTRANEOUS FILES/CHANGES IN YOUR RESPONSE.
 '''

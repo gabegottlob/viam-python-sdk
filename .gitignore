@@ -136,3 +136,9 @@ bin/
 
 # license finder
 lf_logs/
+
+#launch.json
+.vscode/launch.json
+
+#ai_updater test files
+ai_updater/*.txt

@@ -11,8 +11,8 @@ class NewFuncs(BaseModel):
     implementation_details: list[str]
 
 class GeneratedFiles(BaseModel):
-    file_paths: list[str]  # List of file paths
-    file_contents: list[str]  # List of corresponding file contents
+    file_paths: list[str]
+    file_contents: list[str]
 
 def write_to_file(filepath: str, content: str) -> None:
     print(f"Writing to: {filepath}")
@@ -20,8 +20,67 @@ def write_to_file(filepath: str, content: str) -> None:
         f.write(content)
     print(f"Successfully wrote to: {filepath}")
 
-def get_diff_analysis(client: genai.Client, diff_output: str) -> types.GenerateContentResponse:
-    prompt = DIFF_PARSER_PROMPT.format(zsh_diff_output=diff_output)
+def read_file_content(file_path):
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            return f.read()
+    except Exception as e:
+        return f"Error reading file: {str(e)}"
+
+def gather_context(current_dir: str, context: dict) -> None:
+    project_root_dir = os.path.dirname(current_dir)
+    sdk_dir = os.path.join(project_root_dir, "src/viam")
+
+    for (root, dirs, files) in os.walk(sdk_dir, topdown=True):
+        if root == sdk_dir: #get rid of directories not needed for context
+            dirs.remove("gen")
+            dirs.remove("proto")
+        if '__pycache__' in dirs:
+            dirs.remove('__pycache__')
+
+        current_directory_relative = os.path.relpath(root, sdk_dir) #this is a mess u should prob redo sometime
+        current_category = None
+        if current_directory_relative == ".":
+            current_category = "root"
+        else:
+            current_category = current_directory_relative.split(os.sep)[0]
+
+        # Write directory information to context
+        context[current_category] += f"Directory: {os.path.relpath(root, project_root_dir)}\n"
+        context[current_category] += f"Subdirectories: {dirs}\n"
+        context[current_category] += f"Files: {files}\n"
+
+        for file in files:
+            file_path = os.path.join(root, file)
+            sdk_file_path = os.path.relpath(file_path, project_root_dir)
+            file_content = read_file_content(file_path)
+
+            # Update context dictionary
+            context[current_category] += f"File: {sdk_file_path}\n"
+            context[current_category] += f"Content: {file_content}\n"
+            context[current_category] += "--------------------------------\n"
+
+
+def get_diff_analysis(client: genai.Client, current_dir: str, diff_output: str) -> types.GenerateContentResponse:
+    context = {
+        "root" : "",
+        "components" : "",
+        "resource" : "",
+        "robot" : "",
+        "rpc" : "",
+        "services" : "",
+        "module" : "",
+        "media" : "",
+        "app" : "",
+    }
+
+    gather_context(current_dir, context)
+
+    prompt = DIFF_PARSER_PROMPT.format(root_context=context["root"], components_context=context["components"],
+                                       resource_context=context["resource"], robot_context=context["robot"],
+                                       rpc_context=context["rpc"], services_context=context["services"],
+                                       module_context=context["module"], media_context=context["media"],
+                                       app_context=context["app"], zsh_diff_output=diff_output)
 
     tokens = client.models.count_tokens(
         model="gemini-2.5-flash-preview-05-20",
@@ -33,10 +92,6 @@ def get_diff_analysis(client: genai.Client, diff_output: str) -> types.GenerateC
         model="gemini-2.5-flash-preview-05-20",
         contents=prompt,
         config=types.GenerateContentConfig(
-            system_instruction='''
-            You are an expert in analyzing protobuf definitions and determining required implementations in a Viam robotics SDK.
-            Your task is to assist developers in automating SDK updates. Be precise, meticulous, and follow all instructions exactly.
-            ''',
             temperature=0.0,
             response_mime_type="application/json",
             response_schema=NewFuncs
@@ -44,7 +99,7 @@ def get_diff_analysis(client: genai.Client, diff_output: str) -> types.GenerateC
     )
 
 def generate_implementations(client: genai.Client, current_dir: str, diff_analysis: types.GenerateContentResponse):
-    project_root_dir = os.path.dirname(current_dir) #this is hardcoded and prob should be made better
+    project_root_dir = os.path.dirname(current_dir)
 
     parsed_response: NewFuncs = diff_analysis.parsed
 
@@ -75,8 +130,6 @@ def generate_implementations(client: genai.Client, current_dir: str, diff_analys
     )
     print(f"Input tokens from second prompt: {tokens}")
 
-    #write_to_file(os.path.join(current_dir, "prompt2test.txt"), prompt)
-
     response2 = client.models.generate_content(
         model="gemini-2.5-flash-preview-05-20",
         contents=prompt,
@@ -87,10 +140,20 @@ def generate_implementations(client: genai.Client, current_dir: str, diff_analys
         )
     )
 
+    # Write the responses to files
     parsed_response2: GeneratedFiles = response2.parsed
     if(len(parsed_response2.file_paths) == len(parsed_response2.file_contents)):
         for index, file_path in enumerate(parsed_response2.file_paths):
+            # Write to test output in ai_updater directory
             write_to_file(os.path.join(current_dir, "test_output" + str(index) + ".txt"), parsed_response2.file_contents[index])
+
+            # Create AI version of the file in the same directory
+            original_file_dir = os.path.dirname(os.path.join(project_root_dir, file_path))
+            original_filename = os.path.basename(file_path)
+            filename_without_ext, file_ext = os.path.splitext(original_filename)
+            ai_filename = f"{filename_without_ext}ai{file_ext}"
+            ai_file_path = os.path.join(original_file_dir, ai_filename)
+            write_to_file(ai_file_path, parsed_response2.file_contents[index])
     else:
         print("ERROR: AI OUTPUT INCORRECT")
 
@@ -106,12 +169,12 @@ def main():
     if not zsh_diff_output:
         raise ValueError("ZSH_DIFF_OUTPUT environment variable not set")
 
-    # Write initial diff to file
+    # Write initial diff to file (only for debugging)
     testdiff_path = os.path.join(current_dir, "testDiff.txt")
     write_to_file(testdiff_path, zsh_diff_output)
 
     # Get diff analysis
-    diff_analysis = get_diff_analysis(client, zsh_diff_output)
+    diff_analysis = get_diff_analysis(client, current_dir, zsh_diff_output)
     diffparsertest_path = os.path.join(current_dir, "diffparsertest.txt")
     write_to_file(diffparsertest_path, diff_analysis.text)
 

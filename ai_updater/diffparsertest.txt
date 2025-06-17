@@ -1,9 +1,0 @@
-COMPONENT: Gripper
-NEW METHOD: GetKinematics
-FILES NEEDING IMPLEMENTATION:
-- src/viam/components/gripper/gripper.py: Abstract method
-- src/viam/components/gripper/client.py: Client implementation
-- src/viam/components/gripper/service.py: Service implementation
-REQUEST TYPE: common.v1.common_pb2.GetKinematicsRequest
-RESPONSE TYPE: common.v1.common_pb2.GetKinematicsResponse
-SPECIAL TYPES: bytes (kinematics_data field), google.protobuf.Struct (extra field)
