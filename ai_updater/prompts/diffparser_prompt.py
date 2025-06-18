@@ -33,10 +33,17 @@ Here is a rough outline of the SDK as well as full included files so you can und
    - Defines service interfaces and message types
    - Used for RPC communication between clients and services
    - Includes both component-specific and common message types
+   These files are automatically generated and should not be modified manually, so you should not need to reference them for context, although they may choose to be included:
+   {proto_context}
 
-   These files are automatically generated and should not be modified manually, so you should not need to reference them for context.
+4. Gen (src/viam/gen/):
+   - Contains auto-generated Python code from the proto files
+   - Provides Python classes, services, and message types for use throughout the SDK
+   - These files are included as context to help you understand the available classes and methods, but you should NOT edit or suggest changes to them, as they will be regenerated automatically from the proto definitions.
+   Full files from this subdirectory for context and structure:
+   {gen_context}
 
-4. Resource (src/viam/resource/):
+5. Resource (src/viam/resource/):
    - Manages the fundamental units of the SDK
    - Handles resource discovery, configuration, and lifecycle
    - Provides base classes for all SDK resources
@@ -44,7 +51,7 @@ Here is a rough outline of the SDK as well as full included files so you can und
    Full files from this subdirectory for context and structure:
    {resource_context}
 
-5. Robot (src/viam/robot/):
+6. Robot (src/viam/robot/):
    - Core robot management functionality
    - Handles robot configuration and setup
    - Manages resource discovery and registration
@@ -52,7 +59,7 @@ Here is a rough outline of the SDK as well as full included files so you can und
    Full files from this subdirectory for context and structure:
    {robot_context}
 
-6. RPC (src/viam/rpc/):
+7. RPC (src/viam/rpc/):
    - Implements the RPC communication layer
    - Handles both streaming and unary RPCs
    - Manages authentication and metadata
@@ -60,7 +67,7 @@ Here is a rough outline of the SDK as well as full included files so you can und
    Full files from this subdirectory for context and structure:
    {rpc_context}
 
-7. Services (src/viam/services/):
+8. Services (src/viam/services/):
    - Higher-level services built on top of components
    - Includes services like motion planning, navigation
    - Provides service-specific clients and implementations
@@ -68,7 +75,7 @@ Here is a rough outline of the SDK as well as full included files so you can und
    Full files from this subdirectory for context and structure:
    {services_context}
 
-8. Module (src/viam/module/):
+9. Module (src/viam/module/):
    - Supports modular, reusable robot configurations
    - Enables custom component implementations
    - Handles module packaging and distribution
@@ -76,7 +83,7 @@ Here is a rough outline of the SDK as well as full included files so you can und
    Full files from this subdirectory for context and structure:
    {module_context}
 
-9. Media (src/viam/media/):
+10. Media (src/viam/media/):
    - Handles media-related functionality
    - Manages image and video processing
    - Provides utilities for media streaming
@@ -84,7 +91,7 @@ Here is a rough outline of the SDK as well as full included files so you can und
    Full files from this subdirectory for context and structure:
    {media_context}
 
-10. App (src/viam/app/):
+11. App (src/viam/app/):
     - Application-level functionality
     - Handles app configuration and setup
     - Provides utilities for app development

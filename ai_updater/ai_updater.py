@@ -27,16 +27,14 @@ def read_file_content(file_path):
     except Exception as e:
         return f"Error reading file: {str(e)}"
 
-def gather_context(current_dir: str, context: dict) -> None:
+def gather_context(current_dir: str, context: dict, ignore_dirs: list[str]) -> None:
     project_root_dir = os.path.dirname(current_dir)
     sdk_dir = os.path.join(project_root_dir, "src/viam")
 
     for (root, dirs, files) in os.walk(sdk_dir, topdown=True):
-        if root == sdk_dir: #get rid of directories not needed for context
-            dirs.remove("gen")
-            dirs.remove("proto")
-        if '__pycache__' in dirs:
-            dirs.remove('__pycache__')
+        for dir in ignore_dirs:
+            if dir in dirs:
+                dirs.remove(dir)
 
         current_directory_relative = os.path.relpath(root, sdk_dir) #this is a mess u should prob redo sometime
         current_category = None
@@ -65,6 +63,8 @@ def get_diff_analysis(client: genai.Client, current_dir: str, diff_output: str) 
     context = {
         "root" : "",
         "components" : "",
+        "proto" : "",
+        "gen" : "",
         "resource" : "",
         "robot" : "",
         "rpc" : "",
@@ -74,9 +74,10 @@ def get_diff_analysis(client: genai.Client, current_dir: str, diff_output: str) 
         "app" : "",
     }
 
-    gather_context(current_dir, context)
+    gather_context(current_dir, context, ["__pycache__", "proto"])
 
     prompt = DIFF_PARSER_PROMPT.format(root_context=context["root"], components_context=context["components"],
+                                       proto_context=context["proto"], gen_context=context["gen"],
                                        resource_context=context["resource"], robot_context=context["robot"],
                                        rpc_context=context["rpc"], services_context=context["services"],
                                        module_context=context["module"], media_context=context["media"],
