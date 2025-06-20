@@ -98,7 +98,8 @@ omit important information.
 
 IMPORTANT NOTES:
 - Only output the most specific/leaf directories relevant to the changes.
-    Example: If src/viam/gen/app is relevant, only output that path, not its parent directories.
+    Example: If src/viam/gen/app is relevant, only output that path, not its parent directories (e.g. src/viam/gen or src/viam).
+    THIS IS IMPORTANT. DO NOT OUTPUT PARENT DIRECTORIES INCLUDING THE ROOT DIRECTORY (src/viam) IF YOU OUTPUT A CHILD DIRECTORY.
 - Ensure all directory paths exactly match how they appear in the tree structure.
 - Your output will be processed to gather files from these directories for the next LLM.
 

@@ -18,6 +18,9 @@ jobs:
           #ref: ${{ github.event.workflow_run.head_sha }}
           token: ${{ secrets.REPO_READ_TOKEN }}
 
+      - name: Install tree command
+        run: sudo apt-get update && sudo apt-get install -y tree
+
       - name: Install uv
         uses: astral-sh/setup-uv@v3
         with:
@@ -40,6 +43,10 @@ jobs:
           echo "ZSH_DIFF_OUTPUT<<EOF" >> $GITHUB_ENV
           echo "$DIFF_OUTPUT" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
+          TREE_OUTPUT=$(tree src/viam)
+          echo "TREE_OUTPUT<<EOF" >> $GITHUB_ENV
+          echo "$TREE_OUTPUT" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
 
       - name: Run ai-updater
         env:
@@ -47,4 +54,4 @@ jobs:
           ZSH_DIFF_OUTPUT: ${{ env.ZSH_DIFF_OUTPUT }}
         run: |
           cd ai_updater
-          python ai_updater.py
+          python ai_updater.py --debug --noai

@@ -71,58 +71,62 @@ def get_relevant_dirs(client: genai.Client, zsh_diff_output: str, tree_output: s
         )
     return response
 
-def gather_context(project_root_dir_abs: str, context_dir_rel: str, context: dict, relevant_dirs: list[str]) -> None:
-    """Scrape the provided directory and gather code context for LLM processing.
-
-    Walks through the directory structure, ignoring specified directories,
-    and collects file contents organized by category.
+def gather_context(project_root_dir_abs: str, context_dir_rel: str, relevant_dirs: list[str], include_subdirs: bool = False) -> str:
+    """Scrape directories and gather code context for LLM processing.
 
     Args:
         project_root_dir_abs: Absolute path to the project root
         context_dir_rel: Relative path to the context directory from project root
-        context: Dictionary to store gathered context by category
-        relevant_dirs: List of directory names to include
+        relevant_dirs: List of directory paths (relative to project root) to include
+        include_subdirs: Whether to include subdirectories of relevant_dirs
+
+    Returns:
+        str: Combined context from all relevant directories
     """
+    context_str = ""
     context_dir_abs = os.path.join(project_root_dir_abs, context_dir_rel)
-    debug_lines = []
-    for (root, dirs, files) in os.walk(context_dir_abs, topdown=True):
-        # Remove directories to ignore
+
+    # Convert relevant_dirs to absolute paths for easier comparison
+    abs_relevant_dirs = [os.path.join(project_root_dir_abs, d) for d in relevant_dirs]
+
+    # Walk through the directory structure
+    for root, dirs, files in os.walk(context_dir_abs, topdown=True):
+        # Skip __pycache__ directories
         if "__pycache__" in dirs:
             dirs.remove("__pycache__")
 
-        for dir in dirs:
-            if dir not in relevant_dirs:
-                dirs.remove(dir)
+        # Check if current directory is in our relevant directories
+        is_relevant = root in abs_relevant_dirs or root == context_dir_abs
 
-        # Determine the category based on directory structure
-        current_directory_relative = os.path.relpath(root, context_dir_abs)
-        current_category = None
-        if current_directory_relative == ".":
-            current_category = "root"
-        else:
-            current_category = current_directory_relative.split(os.sep)[0]
+        # If not including subdirectories, prune dirs list to control traversal
+        if not include_subdirs and not is_relevant:
+            # Keep only directories that are direct paths to relevant directories
+            dirs_to_keep = []
+            for d in dirs:
+                dir_path = os.path.join(root, d)
+                # Check if this directory or any of its subdirectories are in our relevant list
+                if dir_path in abs_relevant_dirs or any(rd.startswith(dir_path + os.sep) for rd in abs_relevant_dirs):
+                    dirs_to_keep.append(d)
+            dirs[:] = dirs_to_keep
 
-        # Add directory information to context
-        dir_info = f"Directory: {os.path.relpath(root, project_root_dir_abs)}\n"
-        dir_info += f"Relevant subdirectories: {dirs}\n"
-        dir_info += f"Files: {files}\n"
-        context[current_category] += dir_info
-        debug_lines.append(f"=== Category: {current_category} ===\n" + dir_info)
+        # If this directory is relevant, process it
+        if is_relevant:
+            # Add directory information
+            dir_info = f"Directory: {os.path.relpath(root, project_root_dir_abs)}\n"
+            dir_info += f"Subdirectories: {dirs}\n"
+            dir_info += f"Files: {files}\n"
+            context_str += dir_info
 
-        # Process each file in the directory
-        for file in files:
-            file_path = os.path.join(root, file)
-            sdk_file_path = os.path.relpath(file_path, project_root_dir_abs)
-            file_content = read_file_content(file_path)
+            # Process files in this directory
+            for file in files:
+                file_path = os.path.join(root, file)
+                sdk_file_path = os.path.relpath(file_path, project_root_dir_abs)
+                file_content = read_file_content(file_path)
 
-            file_info = f"File: {sdk_file_path}\nContent: \n{file_content}\n--------------------------------\n"
-            context[current_category] += file_info
-            debug_lines.append(file_info)
+                file_info = f"File: {sdk_file_path}\nContent: \n{file_content}\n--------------------------------\n"
+                context_str += file_info
 
-    # Write debug output if enabled
-    if DEBUG:
-        debug_file_path = os.path.join(os.getcwd(), "gathercontexttest.txt")
-        write_to_file(debug_file_path, "\n".join(debug_lines))
+    return context_str
 
 
 def get_diff_analysis(client: genai.Client, current_dir: str, diff_output: str, relevant_dirs: list[str]) -> types.GenerateContentResponse:
@@ -136,31 +140,14 @@ def get_diff_analysis(client: genai.Client, current_dir: str, diff_output: str, 
     Returns:
         GenerateContentResponse: LLM response containing analysis of needed changes
     """
-    # Initialize context dictionary with empty categories
-    context = {
-        "root" : "",
-        "components" : "",
-        "proto" : "",
-        "gen" : "",
-        "resource" : "",
-        "robot" : "",
-        "rpc" : "",
-        "services" : "",
-        "module" : "",
-        "media" : "",
-        "app" : "",
-    }
-
     # Gather code context from the project
-    gather_context(project_root_dir_abs=os.path.dirname(current_dir), context_dir_rel="src/viam", context=context, relevant_dirs=relevant_dirs)
+    relevant_context = gather_context(project_root_dir_abs=os.path.dirname(current_dir), context_dir_rel="src/viam", relevant_dirs=relevant_dirs, include_subdirs=True)
+    if DEBUG:
+        debug_file_path = os.path.join(os.getcwd(), "relevant_context.txt")
+        write_to_file(debug_file_path, relevant_context)
 
     # Format the prompt with gathered context
-    prompt = DIFF_PARSER_P1.format(root_context=context["root"], components_context=context["components"],
-                                       proto_context=context["proto"], gen_context=context["gen"],
-                                       resource_context=context["resource"], robot_context=context["robot"],
-                                       rpc_context=context["rpc"], services_context=context["services"],
-                                       module_context=context["module"], media_context=context["media"],
-                                       app_context=context["app"], zsh_diff_output=diff_output)
+    prompt = DIFF_PARSER_P1.format(selected_context_files=relevant_context, zsh_diff_output=diff_output)
 
     # Count tokens for logging
     tokens = client.models.count_tokens(
@@ -223,20 +210,26 @@ def generate_implementations(client: genai.Client, current_dir: str, diff_analys
             existing_files_text += f"\n=== {file_path} ===\n# Error reading file: {str(e)}\n"
     prompt += existing_files_text
 
+    # Gather testing suite context
+    testing_suite = gather_context(project_root_dir_abs=os.path.dirname(current_dir), context_dir_rel="tests", relevant_dirs=["tests/mocks"], include_subdirs=False)
+    if DEBUG:
+        debug_file_path = os.path.join(os.getcwd(), "testing_suite_context.txt")
+        write_to_file(debug_file_path, testing_suite)
+
     # Add the second part of the prompt
-    prompt += FUNCTION_GENERATOR_P2
+    prompt += FUNCTION_GENERATOR_P2.format(testing_suite=testing_suite)
 
     # Count tokens for logging
     tokens = client.models.count_tokens(
     model="gemini-2.5-flash-preview-05-20",
         contents=prompt
-)
+    )
     print(f"Input tokens from funcgenerator_prompt: {tokens} \n")
 
     # Generate and write files if AI is enabled
     if AI_ENABLED:
         response2 = client.models.generate_content(
-    model="gemini-2.5-flash-preview-05-20",
+            model="gemini-2.5-flash-preview-05-20",
             contents=prompt,
             config=types.GenerateContentConfig(
                 temperature=0.0,
@@ -288,6 +281,8 @@ def main():
 
     # Get relevant directories from LLM
     relevant_dirs: list[str] = get_relevant_dirs(client, zsh_diff_output, tree_output).parsed.context_dirs
+    if DEBUG:
+        write_to_file(os.path.join(current_dir, "relevantdirstest.txt"), str(relevant_dirs))
 
     # Get diff analysis from LLM
     diff_analysis = get_diff_analysis(client, current_dir, zsh_diff_output, relevant_dirs)
