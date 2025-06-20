@@ -96,13 +96,26 @@ You should also include directories that are relevant to the overall architectur
 generally be valuable context for the next LLM in the chain. It's better to include too much context than to
 omit important information.
 
-IMPORTANT NOTES:
-- Only output the most specific/leaf directories relevant to the changes.
-    Example: If src/viam/gen/app is relevant, only output that path, not its parent directories (e.g. src/viam/gen or src/viam).
-    THIS IS IMPORTANT. DO NOT OUTPUT PARENT DIRECTORIES INCLUDING THE ROOT DIRECTORY (src/viam) IF YOU OUTPUT A CHILD DIRECTORY.
-- Ensure all directory paths exactly match how they appear in the tree structure.
-- Your output will be processed to gather files from these directories for the next LLM.
+CRITICAL INSTRUCTIONS FOR DIRECTORY SELECTION:
+1. NEVER include parent directories when a child directory is more specific and relevant.
+   - INCORRECT: ['src/viam/components', 'src/viam/components/gripper']
+   - CORRECT: ['src/viam/components/gripper']
+
+2. NEVER include both a parent and its child directory in your output.
+   - INCORRECT: ['src/viam/proto/common', 'src/viam/proto']
+   - CORRECT: ['src/viam/proto/common']
+
+3. ONLY include the most specific (deepest) relevant directories.
+   - If src/viam/gen/component/gripper/v1 is relevant, DO NOT also include:
+     * src/viam
+     * src/viam/gen
+     * src/viam/gen/component
+     * src/viam/gen/component/gripper
+
+4. ALWAYS check your final list to ensure no parent-child relationships exist between any directories.
+
+5. ENSURE all directory paths exactly match how they appear in the tree structure.
 
 IMPORTANT: YOUR OUTPUT WILL BE PROCESSED AND THE CONTENTS OF THE DIRECTORIES WILL BE PASSED TO THE NEXT LLM IN THE CHAIN.
-FOR THIS REASON ENSURE THE DIRECTORY PATHS ARE EXACTLY AS THEY ARE IN THE TREE STRUCTURE.
+FOR THIS REASON ENSURE THE DIRECTORY PATHS ARE EXACTLY AS THEY ARE IN THE TREE STRUCTURE AND ONLY INCLUDE THE MOST SPECIFIC DIRECTORIES.
 '''
