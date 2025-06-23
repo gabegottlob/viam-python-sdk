@@ -79,7 +79,10 @@ Here is a rough outline of the SDK to help you understand its architecture and f
     - Provides utilities for app development
     - Manages app-specific resources
 
-Here are the specific directories/files from the SDK that are relevant to the changes being made or would be valuable context:
+12. Tests Directory (tests/):
+   - Contains comprehensive test suite for the SDK
+
+Here are the specific files from the SDK that are relevant to the changes being made or would be valuable context:
 === SELECTED CONTEXT FILES ===
 {selected_context_files}
 
@@ -87,10 +90,20 @@ Your task is to analyze the changes in proto definitions and identify which new 
 Here are the changes to the proto files (provided as a git diff):
 {zsh_diff_output}
 
-Based on these changes and your understanding of the codebase, output the paths of the files that need to be updated (you will never
-need to create entirely new files), and what needs to be implemented within that file. These instructions will then be passed to another
-Gemini LLM which will implement the changes, so make your instructions as relevant and detailed as necessary for another Gemini LLM to interpret. Include
-as much detail as is necessary so that the other LLM can implement the changes when given the original files and the instructions.
+TASK OVERVIEW:
+You are the second step in an AI pipeline that updates SDK code based on proto definition changes. Your specific role is to:
+
+1. Analyze the proto changes in the git diff
+2. Identify which files need to be modified to implement these changes
+3. Provide detailed instructions for what needs to be implemented in each file
+
+Based on these changes and your understanding of the codebase, output the paths of the files that need to be updated, and what needs to be implemented within that file.
+These instructions will then be passed to another Gemini LLM which will implement the changes, so make your instructions as relevant and detailed as necessary
+for another Gemini LLM to interpret. Include as much detail as is necessary so that the other LLM can implement the changes when given the original files and the instructions.
+
+IMPORTANT: ALSO IDENTIFY ANY FILES WITHIN THE tests/ DIRECTORY THAT NEED TO BE UPDATED.
+For each implementation file that needs changes, check if there are corresponding files that would need to be updated to test the new functionality.
+Include these in your list of files to update alongisde the necessary changes.
 
 IMPORTANT: THE ORIGINAL FUNCTIONALITY OF THE SDK MUST REMAIN EXACTLY INTACT. THESE CHANGES WILL BE DIRECTLY REINSERTED INTO THE CODEBASE.
 ONLY INCLUDE IMPLEMENTATION DETAILS IN YOUR RESPONSE THAT ARE ABSOLUTELY NECESSARY. DO NOT INCLUDE EXTRANEOUS FILES/CHANGES IN YOUR RESPONSE.

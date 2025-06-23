@@ -5,3 +5,6 @@ echo Diff output saved and exported to ZSH_DIFF_OUTPUT variable.
 TREE_OUTPUT=$(tree ../src/viam)
 export TREE_OUTPUT
 echo Tree output saved and exported to TREE_OUTPUT variable.
+TESTS_TREE_OUTPUT=$(tree ../tests)
+export TESTS_TREE_OUTPUT
+echo Tests tree output saved and exported to TESTS_TREE_OUTPUT variable.

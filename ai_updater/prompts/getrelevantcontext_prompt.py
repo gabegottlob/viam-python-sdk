@@ -4,9 +4,18 @@ and precisely determine the required code modifications to keep the various SDKs
 
 Your specific job is to:
 
-1. Analyze the provided git diff to understand what changes have been made and need to be implemented in the SDK
-2. Examine the SDK structure (and tree structure provided) to determine which files contain relevant context
-3. Output a list of files that should be included as context for the next LLM in the chain
+1. Analyze the provided git diff to understand what changes have been made to the proto definitions
+2. Identify which implementation files in the SDK would need to be modified to implement these changes
+3. Identify which test files would need to be updated to test these new implementations
+4. Output a list of both implementation and test files that should be included as context
+
+When selecting files, consider:
+- Files that directly implement the components/services or other functionality being changed in the proto files
+- Files that contain similar patterns or examples that would be helpful for implementing the changes
+- Test files that verify the functionality being changed
+- Base classes or interfaces that the changed components inherit from or implement
+
+Your output should be a list of file paths, with a brief explanation of why each file is relevant.
 
 The next LLM in the chain will use your output to gather code from these files and analyze what specific code changes need to be implemented.
 Your analysis should be thorough but focused on identifying only the most relevant files to keep the context manageable.
@@ -85,18 +94,22 @@ Here is a rough outline of the SDK architecture to help you understand its struc
     - Provides utilities for app development
     - Manages app-specific resources
 
+12. Tests Directory (tests/):
+   - Contains comprehensive test suite for the SDK
+
 Here is the tree structure of the SDK:
-{tree_structure}
+{sdk_tree_structure}
+
+Here is the tree structure of the tests directory:
+{tests_tree_structure}
 
 Finally, here are the changes to the proto files (provided as a git diff):
 {zsh_diff_output}
 
+Task Review:
 Based on the git diff provided, please analyze which files contain code that is most relevant to the changes being made.
 You should also include files that are relevant to the overall architecture of the SDK or would
-generally be valuable context for the next LLM in the chain. For example you might include context
-from other components or services that are similar to the ones being changed so the LLM can have more examples.
-It's better to include too much context than to omit important information. Additionally even files such as __init__.py
-could be valuable context for the next LLM in the chain.
+generally be valuable context for the next LLM in the chain. It's better to include too much context than to omit important information.
 
 IMPORTANT: YOUR OUTPUT WILL BE PROCESSED AND THE CONTENTS OF THE FILES WILL BE PASSED TO THE NEXT LLM IN THE CHAIN.
 FOR THIS REASON ENSURE THE FILE PATHS ARE EXACTLY AS THEY ARE IN THE TREE STRUCTURE.

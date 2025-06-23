@@ -12,13 +12,10 @@ from prompts.getrelevantcontext_prompt import GET_RELEVANT_CONTEXT_P1
 DEBUG = False
 AI_ENABLED = False
 
-class ContextDirs(BaseModel):
-    """Model for storing the directories that should be included as context."""
-    context_dirs: list[str]
-
 class ContextFiles(BaseModel):
     """Model for storing the files that should be included as context."""
-    context_files: list[str]
+    file_paths: list[str]
+    explanation: list[str]
 
 class RequiredChanges(BaseModel):
     """Model for storing analysis of code needed based on diff."""
@@ -57,12 +54,9 @@ def read_file_content(file_path) -> str:
     except Exception as e:
         return f"Error reading file: {str(e)}"
 
-def get_relevant_context(client: genai.Client, zsh_diff_output: str, tree_output: str) -> types.GenerateContentResponse:
-    prompt = GET_RELEVANT_CONTEXT_P1.format(tree_structure=tree_output, zsh_diff_output=zsh_diff_output)
-    tokens = client.models.count_tokens(
-        model="gemini-2.5-flash-preview-05-20",
-        contents=prompt
-    )
+def get_relevant_context(client: genai.Client, zsh_diff_output: str, sdk_tree_output: str, tests_tree_output: str) -> types.GenerateContentResponse:
+    prompt = GET_RELEVANT_CONTEXT_P1.format(sdk_tree_structure=sdk_tree_output, tests_tree_structure=tests_tree_output, zsh_diff_output=zsh_diff_output)
+    tokens = client.models.count_tokens(model="gemini-2.5-flash-preview-05-20", contents=prompt)
     print(f"Input tokens from getrelevantdirs_prompt: {tokens}\n")
     response = client.models.generate_content(
             model="gemini-2.5-flash-preview-05-20",
@@ -75,62 +69,62 @@ def get_relevant_context(client: genai.Client, zsh_diff_output: str, tree_output
         )
     return response
 
-def gather_context_dirs(project_root_dir_abs: str, context_dir_rel: str, relevant_dirs: list[str], include_subdirs: bool = False) -> str:
-    """Scrape directories and gather code context for LLM processing.
+# def gather_context_dirs(project_root_dir_abs: str, context_dir_rel: str, relevant_dirs: list[str], include_subdirs: bool = False) -> str:
+#     """Scrape directories and gather code context for LLM processing.
 
-    Args:
-        project_root_dir_abs: Absolute path to the project root
-        context_dir_rel: Relative path to the context directory from project root
-        relevant_dirs: List of directory paths (relative to project root) to include
-        include_subdirs: Whether to include subdirectories of relevant_dirs
+#     Args:
+#         project_root_dir_abs: Absolute path to the project root
+#         context_dir_rel: Relative path to the context directory from project root
+#         relevant_dirs: List of directory paths (relative to project root) to include
+#         include_subdirs: Whether to include subdirectories of relevant_dirs
 
-    Returns:
-        str: Combined context from all relevant directories
-    """
-    context_str = ""
-    context_dir_abs = os.path.join(project_root_dir_abs, context_dir_rel)
+#     Returns:
+#         str: Combined context from all relevant directories
+#     """
+#     context_str = ""
+#     context_dir_abs = os.path.join(project_root_dir_abs, context_dir_rel)
 
-    # Convert relevant_dirs to absolute paths for easier comparison
-    abs_relevant_dirs = [os.path.join(project_root_dir_abs, d) for d in relevant_dirs]
+#     # Convert relevant_dirs to absolute paths for easier comparison
+#     abs_relevant_dirs = [os.path.join(project_root_dir_abs, d) for d in relevant_dirs]
 
-    # Walk through the directory structure
-    for root, dirs, files in os.walk(context_dir_abs, topdown=True):
-        # Skip __pycache__ directories
-        if "__pycache__" in dirs:
-            dirs.remove("__pycache__")
+#     # Walk through the directory structure
+#     for root, dirs, files in os.walk(context_dir_abs, topdown=True):
+#         # Skip __pycache__ directories
+#         if "__pycache__" in dirs:
+#             dirs.remove("__pycache__")
 
-        # Check if current directory is in our relevant directories
-        is_relevant = root in abs_relevant_dirs or root == context_dir_abs
+#         # Check if current directory is in our relevant directories
+#         is_relevant = root in abs_relevant_dirs or root == context_dir_abs
 
-        # If not including subdirectories, prune dirs list to control traversal
-        if not include_subdirs and not is_relevant:
-            # Keep only directories that are direct paths to relevant directories
-            dirs_to_keep = []
-            for d in dirs:
-                dir_path = os.path.join(root, d)
-                # Check if this directory or any of its subdirectories are in our relevant list
-                if dir_path in abs_relevant_dirs or any(rd.startswith(dir_path + os.sep) for rd in abs_relevant_dirs):
-                    dirs_to_keep.append(d)
-            dirs[:] = dirs_to_keep
+#         # If not including subdirectories, prune dirs list to control traversal
+#         if not include_subdirs and not is_relevant:
+#             # Keep only directories that are direct paths to relevant directories
+#             dirs_to_keep = []
+#             for d in dirs:
+#                 dir_path = os.path.join(root, d)
+#                 # Check if this directory or any of its subdirectories are in our relevant list
+#                 if dir_path in abs_relevant_dirs or any(rd.startswith(dir_path + os.sep) for rd in abs_relevant_dirs):
+#                     dirs_to_keep.append(d)
+#             dirs[:] = dirs_to_keep
 
-        # If this directory is relevant, process it
-        if is_relevant:
-            # Add directory information
-            dir_info = f"Directory: {os.path.relpath(root, project_root_dir_abs)}\n"
-            dir_info += f"Subdirectories: {dirs}\n"
-            dir_info += f"Files: {files}\n"
-            context_str += dir_info
+#         # If this directory is relevant, process it
+#         if is_relevant:
+#             # Add directory information
+#             dir_info = f"Directory: {os.path.relpath(root, project_root_dir_abs)}\n"
+#             dir_info += f"Subdirectories: {dirs}\n"
+#             dir_info += f"Files: {files}\n"
+#             context_str += dir_info
 
-            # Process files in this directory
-            for file in files:
-                file_path = os.path.join(root, file)
-                sdk_file_path = os.path.relpath(file_path, project_root_dir_abs)
-                file_content = read_file_content(file_path)
+#             # Process files in this directory
+#             for file in files:
+#                 file_path = os.path.join(root, file)
+#                 sdk_file_path = os.path.relpath(file_path, project_root_dir_abs)
+#                 file_content = read_file_content(file_path)
 
-                file_info = f"File: {sdk_file_path}\nContent: \n{file_content}\n--------------------------------\n"
-                context_str += file_info
+#                 file_info = f"File: {sdk_file_path}\nContent: \n{file_content}\n--------------------------------\n"
+#                 context_str += file_info
 
-    return context_str
+#     return context_str
 
 def gather_context_files(project_root_dir_abs: str, relevant_files: list[str]) -> str:
     """Gather context from specific files in the project."""
@@ -164,10 +158,7 @@ def get_diff_analysis(client: genai.Client, current_dir: str, diff_output: str, 
     prompt = DIFF_PARSER_P1.format(selected_context_files=relevant_context, zsh_diff_output=diff_output)
 
     # Count tokens for logging
-    tokens = client.models.count_tokens(
-    model="gemini-2.5-flash-preview-05-20",
-        contents=prompt
-    )
+    tokens = client.models.count_tokens(model="gemini-2.5-flash-preview-05-20", contents=prompt)
     print(f"Input tokens from diffparser_prompt: {tokens}\n")
 
     # Generate content if AI is enabled, otherwise return empty response
@@ -224,20 +215,11 @@ def generate_implementations(client: genai.Client, current_dir: str, diff_analys
             existing_files_text += f"\n=== {file_path} ===\n# Error reading file: {str(e)}\n"
     prompt += existing_files_text
 
-    # Gather testing suite context
-    testing_suite = gather_context_dirs(project_root_dir_abs=os.path.dirname(current_dir), context_dir_rel="tests", relevant_dirs=["tests/mocks"], include_subdirs=False)
-    if DEBUG:
-        debug_file_path = os.path.join(os.getcwd(), "testing_suite_context.txt")
-        write_to_file(debug_file_path, testing_suite)
-
     # Add the second part of the prompt
     prompt += FUNCTION_GENERATOR_P2
 
     # Count tokens for logging
-    tokens = client.models.count_tokens(
-    model="gemini-2.5-flash-preview-05-20",
-        contents=prompt
-    )
+    tokens = client.models.count_tokens(model="gemini-2.5-flash-preview-05-20", contents=prompt)
     print(f"Input tokens from funcgenerator_prompt: {tokens} \n")
 
     # Generate and write files if AI is enabled
@@ -286,20 +268,26 @@ def main():
     if DEBUG:
         testdiff_path = os.path.join(current_dir, "gitdifftest.txt")
         write_to_file(testdiff_path, zsh_diff_output)
-    tree_output = os.getenv("TREE_OUTPUT")
-    if not tree_output:
+    sdk_tree_output = os.getenv("TREE_OUTPUT")
+    if not sdk_tree_output:
         raise ValueError("TREE_OUTPUT environment variable not set")
     if DEBUG:
-        testtree_path = os.path.join(current_dir, "treeoutputtest.txt")
-        write_to_file(testtree_path, tree_output)
+        testtree_path = os.path.join(current_dir, "sdktreeoutputtest.txt")
+        write_to_file(testtree_path, sdk_tree_output)
+    tests_tree_output = os.getenv("TESTS_TREE_OUTPUT")
+    if not tests_tree_output:
+        raise ValueError("TESTS_TREE_OUTPUT environment variable not set")
+    if DEBUG:
+        teststree_path = os.path.join(current_dir, "teststreeoutputtest.txt")
+        write_to_file(teststree_path, tests_tree_output)
 
     # Get relevant context files from LLM
-    relevant_files: list[str] = get_relevant_context(client, zsh_diff_output, tree_output).parsed.context_files
+    relevant_context = get_relevant_context(client, zsh_diff_output, sdk_tree_output, tests_tree_output)
     if DEBUG:
-        write_to_file(os.path.join(current_dir, "relevantcontextfilestest.txt"), str(relevant_files))
+        write_to_file(os.path.join(current_dir, "relevantcontextfilestest.txt"), str(relevant_context.text))
 
     # Get diff analysis from LLM
-    diff_analysis = get_diff_analysis(client, current_dir, zsh_diff_output, relevant_files)
+    diff_analysis = get_diff_analysis(client, current_dir, zsh_diff_output, relevant_context.parsed.file_paths)
 
     if DEBUG:
         diffparsertest_path = os.path.join(current_dir, "diffanalysistest.txt")
@@ -307,9 +295,7 @@ def main():
 
     # Generate implementations based on analysis
     generate_implementations(client, current_dir, diff_analysis)
-    #implementations = generate_implementations(client, current_dir, diff_analysis)
-    #funcgeneratortest_path = os.path.join(current_dir, "funcgeneratortest.txt")
-    #write_to_file(funcgeneratortest_path, implementations.text)
+
 
 if __name__ == "__main__":
     main()
