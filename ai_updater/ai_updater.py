@@ -6,7 +6,7 @@ import sys
 
 from prompts.diffparser_prompt import DIFF_PARSER_P1
 from prompts.funcgenerator_prompt import FUNCTION_GENERATOR_P1, FUNCTION_GENERATOR_P2
-from prompts.getrelevantdirs_prompt import GET_RELEVANT_DIRS_P1
+from prompts.getrelevantcontext_prompt import GET_RELEVANT_CONTEXT_P1
 
 # Configuration flags
 DEBUG = False
@@ -15,6 +15,10 @@ AI_ENABLED = False
 class ContextDirs(BaseModel):
     """Model for storing the directories that should be included as context."""
     context_dirs: list[str]
+
+class ContextFiles(BaseModel):
+    """Model for storing the files that should be included as context."""
+    context_files: list[str]
 
 class RequiredChanges(BaseModel):
     """Model for storing analysis of code needed based on diff."""
@@ -53,8 +57,8 @@ def read_file_content(file_path) -> str:
     except Exception as e:
         return f"Error reading file: {str(e)}"
 
-def get_relevant_dirs(client: genai.Client, zsh_diff_output: str, tree_output: str) -> types.GenerateContentResponse:
-    prompt = GET_RELEVANT_DIRS_P1.format(tree_structure=tree_output, zsh_diff_output=zsh_diff_output)
+def get_relevant_context(client: genai.Client, zsh_diff_output: str, tree_output: str) -> types.GenerateContentResponse:
+    prompt = GET_RELEVANT_CONTEXT_P1.format(tree_structure=tree_output, zsh_diff_output=zsh_diff_output)
     tokens = client.models.count_tokens(
         model="gemini-2.5-flash-preview-05-20",
         contents=prompt
@@ -66,12 +70,12 @@ def get_relevant_dirs(client: genai.Client, zsh_diff_output: str, tree_output: s
             config=types.GenerateContentConfig(
                 temperature=0.0,
                 response_mime_type="application/json",
-                response_schema=ContextDirs
+                response_schema=ContextFiles
             )
         )
     return response
 
-def gather_context(project_root_dir_abs: str, context_dir_rel: str, relevant_dirs: list[str], include_subdirs: bool = False) -> str:
+def gather_context_dirs(project_root_dir_abs: str, context_dir_rel: str, relevant_dirs: list[str], include_subdirs: bool = False) -> str:
     """Scrape directories and gather code context for LLM processing.
 
     Args:
@@ -128,8 +132,18 @@ def gather_context(project_root_dir_abs: str, context_dir_rel: str, relevant_dir
 
     return context_str
 
+def gather_context_files(project_root_dir_abs: str, relevant_files: list[str]) -> str:
+    """Gather context from specific files in the project."""
+    context_str = ""
+    for file in relevant_files:
+        file_path = os.path.join(project_root_dir_abs, file)
+        file_content = read_file_content(file_path)
+        file_info = f"File: {file}\nContent: \n{file_content}\n--------------------------------\n"
+        context_str += file_info
+    return context_str
 
-def get_diff_analysis(client: genai.Client, current_dir: str, diff_output: str, relevant_dirs: list[str]) -> types.GenerateContentResponse:
+
+def get_diff_analysis(client: genai.Client, current_dir: str, diff_output: str, relevant_files: list[str]) -> types.GenerateContentResponse:
     """Analyze git diff using LLM to identify required code changes.
 
     Args:
@@ -141,7 +155,7 @@ def get_diff_analysis(client: genai.Client, current_dir: str, diff_output: str, 
         GenerateContentResponse: LLM response containing analysis of needed changes
     """
     # Gather code context from the project
-    relevant_context = gather_context(project_root_dir_abs=os.path.dirname(current_dir), context_dir_rel="src/viam", relevant_dirs=relevant_dirs, include_subdirs=True)
+    relevant_context = gather_context_files(project_root_dir_abs=os.path.dirname(current_dir), relevant_files=relevant_files)
     if DEBUG:
         debug_file_path = os.path.join(os.getcwd(), "relevant_context.txt")
         write_to_file(debug_file_path, relevant_context)
@@ -211,13 +225,13 @@ def generate_implementations(client: genai.Client, current_dir: str, diff_analys
     prompt += existing_files_text
 
     # Gather testing suite context
-    testing_suite = gather_context(project_root_dir_abs=os.path.dirname(current_dir), context_dir_rel="tests", relevant_dirs=["tests/mocks"], include_subdirs=False)
+    testing_suite = gather_context_dirs(project_root_dir_abs=os.path.dirname(current_dir), context_dir_rel="tests", relevant_dirs=["tests/mocks"], include_subdirs=False)
     if DEBUG:
         debug_file_path = os.path.join(os.getcwd(), "testing_suite_context.txt")
         write_to_file(debug_file_path, testing_suite)
 
     # Add the second part of the prompt
-    prompt += FUNCTION_GENERATOR_P2.format(testing_suite=testing_suite)
+    prompt += FUNCTION_GENERATOR_P2
 
     # Count tokens for logging
     tokens = client.models.count_tokens(
@@ -279,13 +293,13 @@ def main():
         testtree_path = os.path.join(current_dir, "treeoutputtest.txt")
         write_to_file(testtree_path, tree_output)
 
-    # Get relevant directories from LLM
-    relevant_dirs: list[str] = get_relevant_dirs(client, zsh_diff_output, tree_output).parsed.context_dirs
+    # Get relevant context files from LLM
+    relevant_files: list[str] = get_relevant_context(client, zsh_diff_output, tree_output).parsed.context_files
     if DEBUG:
-        write_to_file(os.path.join(current_dir, "relevantdirstest.txt"), str(relevant_dirs))
+        write_to_file(os.path.join(current_dir, "relevantcontextfilestest.txt"), str(relevant_files))
 
     # Get diff analysis from LLM
-    diff_analysis = get_diff_analysis(client, current_dir, zsh_diff_output, relevant_dirs)
+    diff_analysis = get_diff_analysis(client, current_dir, zsh_diff_output, relevant_files)
 
     if DEBUG:
         diffparsertest_path = os.path.join(current_dir, "diffanalysistest.txt")

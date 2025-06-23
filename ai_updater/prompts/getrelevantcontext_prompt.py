@@ -1,15 +1,15 @@
-GET_RELEVANT_DIRS_P1 = '''
+GET_RELEVANT_CONTEXT_P1 = '''
 You are the first LLM in a chain of AI calls. The overall task is to analyze changes in API proto definitions
 and precisely determine the required code modifications to keep the various SDKs (like Python, C++, Go) up-to-date.
 
 Your specific job is to:
 
 1. Analyze the provided git diff to understand what changes have been made and need to be implemented in the SDK
-2. Examine the SDK structure (and tree structure provided) to determine which directories contain relevant context
-3. Output a list of directories that should be included as context for the next LLM in the chain
+2. Examine the SDK structure (and tree structure provided) to determine which files contain relevant context
+3. Output a list of files that should be included as context for the next LLM in the chain
 
-The next LLM in the chain will use your output to gather code from these directories and analyze what specific code changes need to be implemented.
-Your analysis should be thorough but focused on identifying only the most relevant directories to keep the context manageable.
+The next LLM in the chain will use your output to gather code from these files and analyze what specific code changes need to be implemented.
+Your analysis should be thorough but focused on identifying only the most relevant files to keep the context manageable.
 
 Here is a rough outline of the SDK architecture to help you understand its structure and functionality:
 === SDK ARCHITECTURE ===
@@ -91,31 +91,13 @@ Here is the tree structure of the SDK:
 Finally, here are the changes to the proto files (provided as a git diff):
 {zsh_diff_output}
 
-Based on the git diff provided, please analyze which directories contain code that is most relevant to the changes being made.
-You should also include directories that are relevant to the overall architecture of the SDK or would
-generally be valuable context for the next LLM in the chain. It's better to include too much context than to
-omit important information.
+Based on the git diff provided, please analyze which files contain code that is most relevant to the changes being made.
+You should also include files that are relevant to the overall architecture of the SDK or would
+generally be valuable context for the next LLM in the chain. For example you might include context
+from other components or services that are similar to the ones being changed so the LLM can have more examples.
+It's better to include too much context than to omit important information. Additionally even files such as __init__.py
+could be valuable context for the next LLM in the chain.
 
-CRITICAL INSTRUCTIONS FOR DIRECTORY SELECTION:
-1. NEVER include parent directories when a child directory is more specific and relevant.
-   - INCORRECT: ['src/viam/components', 'src/viam/components/gripper']
-   - CORRECT: ['src/viam/components/gripper']
-
-2. NEVER include both a parent and its child directory in your output.
-   - INCORRECT: ['src/viam/proto/common', 'src/viam/proto']
-   - CORRECT: ['src/viam/proto/common']
-
-3. ONLY include the most specific (deepest) relevant directories.
-   - If src/viam/gen/component/gripper/v1 is relevant, DO NOT also include:
-     * src/viam
-     * src/viam/gen
-     * src/viam/gen/component
-     * src/viam/gen/component/gripper
-
-4. ALWAYS check your final list to ensure no parent-child relationships exist between any directories.
-
-5. ENSURE all directory paths exactly match how they appear in the tree structure.
-
-IMPORTANT: YOUR OUTPUT WILL BE PROCESSED AND THE CONTENTS OF THE DIRECTORIES WILL BE PASSED TO THE NEXT LLM IN THE CHAIN.
-FOR THIS REASON ENSURE THE DIRECTORY PATHS ARE EXACTLY AS THEY ARE IN THE TREE STRUCTURE AND ONLY INCLUDE THE MOST SPECIFIC DIRECTORIES.
+IMPORTANT: YOUR OUTPUT WILL BE PROCESSED AND THE CONTENTS OF THE FILES WILL BE PASSED TO THE NEXT LLM IN THE CHAIN.
+FOR THIS REASON ENSURE THE FILE PATHS ARE EXACTLY AS THEY ARE IN THE TREE STRUCTURE.
 '''
