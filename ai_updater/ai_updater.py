@@ -69,63 +69,6 @@ def get_relevant_context(client: genai.Client, zsh_diff_output: str, sdk_tree_ou
         )
     return response
 
-# def gather_context_dirs(project_root_dir_abs: str, context_dir_rel: str, relevant_dirs: list[str], include_subdirs: bool = False) -> str:
-#     """Scrape directories and gather code context for LLM processing.
-
-#     Args:
-#         project_root_dir_abs: Absolute path to the project root
-#         context_dir_rel: Relative path to the context directory from project root
-#         relevant_dirs: List of directory paths (relative to project root) to include
-#         include_subdirs: Whether to include subdirectories of relevant_dirs
-
-#     Returns:
-#         str: Combined context from all relevant directories
-#     """
-#     context_str = ""
-#     context_dir_abs = os.path.join(project_root_dir_abs, context_dir_rel)
-
-#     # Convert relevant_dirs to absolute paths for easier comparison
-#     abs_relevant_dirs = [os.path.join(project_root_dir_abs, d) for d in relevant_dirs]
-
-#     # Walk through the directory structure
-#     for root, dirs, files in os.walk(context_dir_abs, topdown=True):
-#         # Skip __pycache__ directories
-#         if "__pycache__" in dirs:
-#             dirs.remove("__pycache__")
-
-#         # Check if current directory is in our relevant directories
-#         is_relevant = root in abs_relevant_dirs or root == context_dir_abs
-
-#         # If not including subdirectories, prune dirs list to control traversal
-#         if not include_subdirs and not is_relevant:
-#             # Keep only directories that are direct paths to relevant directories
-#             dirs_to_keep = []
-#             for d in dirs:
-#                 dir_path = os.path.join(root, d)
-#                 # Check if this directory or any of its subdirectories are in our relevant list
-#                 if dir_path in abs_relevant_dirs or any(rd.startswith(dir_path + os.sep) for rd in abs_relevant_dirs):
-#                     dirs_to_keep.append(d)
-#             dirs[:] = dirs_to_keep
-
-#         # If this directory is relevant, process it
-#         if is_relevant:
-#             # Add directory information
-#             dir_info = f"Directory: {os.path.relpath(root, project_root_dir_abs)}\n"
-#             dir_info += f"Subdirectories: {dirs}\n"
-#             dir_info += f"Files: {files}\n"
-#             context_str += dir_info
-
-#             # Process files in this directory
-#             for file in files:
-#                 file_path = os.path.join(root, file)
-#                 sdk_file_path = os.path.relpath(file_path, project_root_dir_abs)
-#                 file_content = read_file_content(file_path)
-
-#                 file_info = f"File: {sdk_file_path}\nContent: \n{file_content}\n--------------------------------\n"
-#                 context_str += file_info
-
-#     return context_str
-
 def gather_context_files(project_root_dir_abs: str, relevant_files: list[str]) -> str:
     """Gather context from specific files in the project."""
     context_str = ""
@@ -241,16 +184,13 @@ def generate_implementations(client: genai.Client, current_dir: str, diff_analys
 def main():
     """Main entry point for the AI updater script."""
     global DEBUG, AI_ENABLED
-    # Parse command line arguments
     DEBUG = "--debug" in sys.argv
     AI_ENABLED = "--noai" not in sys.argv
 
-    # Get the absolute path of the current directory
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    # Initialize Gemini API Client
     client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
 
-    # Get diff and tree output from environment (and write to file for debugging)
+    # Get diff and tree output from environment (and write to files for debugging)
     zsh_diff_output = os.getenv("ZSH_DIFF_OUTPUT")
     if not zsh_diff_output:
         raise ValueError("ZSH_DIFF_OUTPUT environment variable not set")

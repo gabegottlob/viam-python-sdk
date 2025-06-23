@@ -1,0 +1,362 @@
+diff --git a/src/viam/gen/component/button/__init__.py b/src/viam/gen/component/button/__init__.py
+new file mode 100644
+index 000000000..e69de29bb
+diff --git a/src/viam/gen/component/button/v1/__init__.py b/src/viam/gen/component/button/v1/__init__.py
+new file mode 100644
+index 000000000..e69de29bb
+diff --git a/src/viam/gen/component/button/v1/button_grpc.py b/src/viam/gen/component/button/v1/button_grpc.py
+new file mode 100644
+index 000000000..f36d03d0b
+--- /dev/null
++++ b/src/viam/gen/component/button/v1/button_grpc.py
+@@ -0,0 +1,38 @@
++import abc
++import typing
++import grpclib.const
++import grpclib.client
++import grpclib.exceptions
++if typing.TYPE_CHECKING:
++    import grpclib.server
++from .... import common
++import google.api.annotations_pb2
++import google.protobuf.struct_pb2
++from .... import component
++
++class ButtonServiceBase(abc.ABC):
++
++    @abc.abstractmethod
++    async def Push(self, stream: 'grpclib.server.Stream[component.button.v1.button_pb2.PushRequest, component.button.v1.button_pb2.PushResponse]') -> None:
++        pass
++
++    @abc.abstractmethod
++    async def DoCommand(self, stream: 'grpclib.server.Stream[common.v1.common_pb2.DoCommandRequest, common.v1.common_pb2.DoCommandResponse]') -> None:
++        pass
++
++    def __mapping__(self) -> typing.Dict[str, grpclib.const.Handler]:
++        return {'/viam.component.button.v1.ButtonService/Push': grpclib.const.Handler(self.Push, grpclib.const.Cardinality.UNARY_UNARY, component.button.v1.button_pb2.PushRequest, component.button.v1.button_pb2.PushResponse), '/viam.component.button.v1.ButtonService/DoCommand': grpclib.const.Handler(self.DoCommand, grpclib.const.Cardinality.UNARY_UNARY, common.v1.common_pb2.DoCommandRequest, common.v1.common_pb2.DoCommandResponse)}
++
++class UnimplementedButtonServiceBase(ButtonServiceBase):
++
++    async def Push(self, stream: 'grpclib.server.Stream[component.button.v1.button_pb2.PushRequest, component.button.v1.button_pb2.PushResponse]') -> None:
++        raise grpclib.exceptions.GRPCError(grpclib.const.Status.UNIMPLEMENTED)
++
++    async def DoCommand(self, stream: 'grpclib.server.Stream[common.v1.common_pb2.DoCommandRequest, common.v1.common_pb2.DoCommandResponse]') -> None:
++        raise grpclib.exceptions.GRPCError(grpclib.const.Status.UNIMPLEMENTED)
++
++class ButtonServiceStub:
++
++    def __init__(self, channel: grpclib.client.Channel) -> None:
++        self.Push = grpclib.client.UnaryUnaryMethod(channel, '/viam.component.button.v1.ButtonService/Push', component.button.v1.button_pb2.PushRequest, component.button.v1.button_pb2.PushResponse)
++        self.DoCommand = grpclib.client.UnaryUnaryMethod(channel, '/viam.component.button.v1.ButtonService/DoCommand', common.v1.common_pb2.DoCommandRequest, common.v1.common_pb2.DoCommandResponse)
+\ No newline at end of file
+diff --git a/src/viam/gen/component/button/v1/button_pb2.py b/src/viam/gen/component/button/v1/button_pb2.py
+new file mode 100644
+index 000000000..1ce5770db
+--- /dev/null
++++ b/src/viam/gen/component/button/v1/button_pb2.py
+@@ -0,0 +1,28 @@
++"""Generated protocol buffer code."""
++from google.protobuf import descriptor as _descriptor
++from google.protobuf import descriptor_pool as _descriptor_pool
++from google.protobuf import runtime_version as _runtime_version
++from google.protobuf import symbol_database as _symbol_database
++from google.protobuf.internal import builder as _builder
++_runtime_version.ValidateProtobufRuntimeVersion(_runtime_version.Domain.PUBLIC, 5, 29, 1, '', 'component/button/v1/button.proto')
++_sym_db = _symbol_database.Default()
++from ....common.v1 import common_pb2 as common_dot_v1_dot_common__pb2
++from google.api import annotations_pb2 as google_dot_api_dot_annotations__pb2
++from google.protobuf import struct_pb2 as google_dot_protobuf_dot_struct__pb2
++DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n component/button/v1/button.proto\x12\x18viam.component.button.v1\x1a\x16common/v1/common.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1cgoogle/protobuf/struct.proto"P\n\x0bPushRequest\x12\x12\n\x04name\x18\x01 \x01(\tR\x04name\x12-\n\x05extra\x18c \x01(\x0b2\x17.google.protobuf.StructR\x05extra"\x0e\n\x0cPushResponse2\xa6\x02\n\rButtonService\x12\x88\x01\n\x04Push\x12%.viam.component.button.v1.PushRequest\x1a&.viam.component.button.v1.PushResponse"1\x82\xd3\xe4\x93\x02+\x1a)/viam/api/v1/component/button/{name}/push\x12\x89\x01\n\tDoCommand\x12 .viam.common.v1.DoCommandRequest\x1a!.viam.common.v1.DoCommandResponse"7\x82\xd3\xe4\x93\x021"//viam/api/v1/component/button/{name}/do_commandBC\n\x1ccom.viam.component.button.v1Z#go.viam.com/api/component/button/v1b\x06proto3')
++_globals = globals()
++_builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
++_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'component.button.v1.button_pb2', _globals)
++if not _descriptor._USE_C_DESCRIPTORS:
++    _globals['DESCRIPTOR']._loaded_options = None
++    _globals['DESCRIPTOR']._serialized_options = b'\n\x1ccom.viam.component.button.v1Z#go.viam.com/api/component/button/v1'
++    _globals['_BUTTONSERVICE'].methods_by_name['Push']._loaded_options = None
++    _globals['_BUTTONSERVICE'].methods_by_name['Push']._serialized_options = b'\x82\xd3\xe4\x93\x02+\x1a)/viam/api/v1/component/button/{name}/push'
++    _globals['_BUTTONSERVICE'].methods_by_name['DoCommand']._loaded_options = None
++    _globals['_BUTTONSERVICE'].methods_by_name['DoCommand']._serialized_options = b'\x82\xd3\xe4\x93\x021"//viam/api/v1/component/button/{name}/do_command'
++    _globals['_PUSHREQUEST']._serialized_start = 146
++    _globals['_PUSHREQUEST']._serialized_end = 226
++    _globals['_PUSHRESPONSE']._serialized_start = 228
++    _globals['_PUSHRESPONSE']._serialized_end = 242
++    _globals['_BUTTONSERVICE']._serialized_start = 245
++    _globals['_BUTTONSERVICE']._serialized_end = 539
+\ No newline at end of file
+diff --git a/src/viam/gen/component/button/v1/button_pb2.pyi b/src/viam/gen/component/button/v1/button_pb2.pyi
+new file mode 100644
+index 000000000..86357245b
+--- /dev/null
++++ b/src/viam/gen/component/button/v1/button_pb2.pyi
+@@ -0,0 +1,39 @@
++"""
++@generated by mypy-protobuf.  Do not edit manually!
++isort:skip_file
++"""
++import builtins
++import google.protobuf.descriptor
++import google.protobuf.message
++import google.protobuf.struct_pb2
++import typing
++DESCRIPTOR: google.protobuf.descriptor.FileDescriptor
++
++@typing.final
++class PushRequest(google.protobuf.message.Message):
++    DESCRIPTOR: google.protobuf.descriptor.Descriptor
++    NAME_FIELD_NUMBER: builtins.int
++    EXTRA_FIELD_NUMBER: builtins.int
++    name: builtins.str
++
++    @property
++    def extra(self) -> google.protobuf.struct_pb2.Struct:
++        ...
++
++    def __init__(self, *, name: builtins.str=..., extra: google.protobuf.struct_pb2.Struct | None=...) -> None:
++        ...
++
++    def HasField(self, field_name: typing.Literal['extra', b'extra']) -> builtins.bool:
++        ...
++
++    def ClearField(self, field_name: typing.Literal['extra', b'extra', 'name', b'name']) -> None:
++        ...
++global___PushRequest = PushRequest
++
++@typing.final
++class PushResponse(google.protobuf.message.Message):
++    DESCRIPTOR: google.protobuf.descriptor.Descriptor
++
++    def __init__(self) -> None:
++        ...
++global___PushResponse = PushResponse
+\ No newline at end of file
+diff --git a/src/viam/gen/component/switch/__init__.py b/src/viam/gen/component/switch/__init__.py
+new file mode 100644
+index 000000000..e69de29bb
+diff --git a/src/viam/gen/component/switch/v1/__init__.py b/src/viam/gen/component/switch/v1/__init__.py
+new file mode 100644
+index 000000000..e69de29bb
+diff --git a/src/viam/gen/component/switch/v1/switch_grpc.py b/src/viam/gen/component/switch/v1/switch_grpc.py
+new file mode 100644
+index 000000000..499cd958d
+--- /dev/null
++++ b/src/viam/gen/component/switch/v1/switch_grpc.py
+@@ -0,0 +1,54 @@
++import abc
++import typing
++import grpclib.const
++import grpclib.client
++import grpclib.exceptions
++if typing.TYPE_CHECKING:
++    import grpclib.server
++from .... import common
++import google.api.annotations_pb2
++import google.protobuf.struct_pb2
++from .... import component
++
++class SwitchServiceBase(abc.ABC):
++
++    @abc.abstractmethod
++    async def SetPosition(self, stream: 'grpclib.server.Stream[component.switch.v1.switch_pb2.SetPositionRequest, component.switch.v1.switch_pb2.SetPositionResponse]') -> None:
++        pass
++
++    @abc.abstractmethod
++    async def GetPosition(self, stream: 'grpclib.server.Stream[component.switch.v1.switch_pb2.GetPositionRequest, component.switch.v1.switch_pb2.GetPositionResponse]') -> None:
++        pass
++
++    @abc.abstractmethod
++    async def GetNumberOfPositions(self, stream: 'grpclib.server.Stream[component.switch.v1.switch_pb2.GetNumberOfPositionsRequest, component.switch.v1.switch_pb2.GetNumberOfPositionsResponse]') -> None:
++        pass
++
++    @abc.abstractmethod
++    async def DoCommand(self, stream: 'grpclib.server.Stream[common.v1.common_pb2.DoCommandRequest, common.v1.common_pb2.DoCommandResponse]') -> None:
++        pass
++
++    def __mapping__(self) -> typing.Dict[str, grpclib.const.Handler]:
++        return {'/viam.component.switch.v1.SwitchService/SetPosition': grpclib.const.Handler(self.SetPosition, grpclib.const.Cardinality.UNARY_UNARY, component.switch.v1.switch_pb2.SetPositionRequest, component.switch.v1.switch_pb2.SetPositionResponse), '/viam.component.switch.v1.SwitchService/GetPosition': grpclib.const.Handler(self.GetPosition, grpclib.const.Cardinality.UNARY_UNARY, component.switch.v1.switch_pb2.GetPositionRequest, component.switch.v1.switch_pb2.GetPositionResponse), '/viam.component.switch.v1.SwitchService/GetNumberOfPositions': grpclib.const.Handler(self.GetNumberOfPositions, grpclib.const.Cardinality.UNARY_UNARY, component.switch.v1.switch_pb2.GetNumberOfPositionsRequest, component.switch.v1.switch_pb2.GetNumberOfPositionsResponse), '/viam.component.switch.v1.SwitchService/DoCommand': grpclib.const.Handler(self.DoCommand, grpclib.const.Cardinality.UNARY_UNARY, common.v1.common_pb2.DoCommandRequest, common.v1.common_pb2.DoCommandResponse)}
++
++class UnimplementedSwitchServiceBase(SwitchServiceBase):
++
++    async def SetPosition(self, stream: 'grpclib.server.Stream[component.switch.v1.switch_pb2.SetPositionRequest, component.switch.v1.switch_pb2.SetPositionResponse]') -> None:
++        raise grpclib.exceptions.GRPCError(grpclib.const.Status.UNIMPLEMENTED)
++
++    async def GetPosition(self, stream: 'grpclib.server.Stream[component.switch.v1.switch_pb2.GetPositionRequest, component.switch.v1.switch_pb2.GetPositionResponse]') -> None:
++        raise grpclib.exceptions.GRPCError(grpclib.const.Status.UNIMPLEMENTED)
++
++    async def GetNumberOfPositions(self, stream: 'grpclib.server.Stream[component.switch.v1.switch_pb2.GetNumberOfPositionsRequest, component.switch.v1.switch_pb2.GetNumberOfPositionsResponse]') -> None:
++        raise grpclib.exceptions.GRPCError(grpclib.const.Status.UNIMPLEMENTED)
++
++    async def DoCommand(self, stream: 'grpclib.server.Stream[common.v1.common_pb2.DoCommandRequest, common.v1.common_pb2.DoCommandResponse]') -> None:
++        raise grpclib.exceptions.GRPCError(grpclib.const.Status.UNIMPLEMENTED)
++
++class SwitchServiceStub:
++
++    def __init__(self, channel: grpclib.client.Channel) -> None:
++        self.SetPosition = grpclib.client.UnaryUnaryMethod(channel, '/viam.component.switch.v1.SwitchService/SetPosition', component.switch.v1.switch_pb2.SetPositionRequest, component.switch.v1.switch_pb2.SetPositionResponse)
++        self.GetPosition = grpclib.client.UnaryUnaryMethod(channel, '/viam.component.switch.v1.SwitchService/GetPosition', component.switch.v1.switch_pb2.GetPositionRequest, component.switch.v1.switch_pb2.GetPositionResponse)
++        self.GetNumberOfPositions = grpclib.client.UnaryUnaryMethod(channel, '/viam.component.switch.v1.SwitchService/GetNumberOfPositions', component.switch.v1.switch_pb2.GetNumberOfPositionsRequest, component.switch.v1.switch_pb2.GetNumberOfPositionsResponse)
++        self.DoCommand = grpclib.client.UnaryUnaryMethod(channel, '/viam.component.switch.v1.SwitchService/DoCommand', common.v1.common_pb2.DoCommandRequest, common.v1.common_pb2.DoCommandResponse)
+\ No newline at end of file
+diff --git a/src/viam/gen/component/switch/v1/switch_pb2.py b/src/viam/gen/component/switch/v1/switch_pb2.py
+new file mode 100644
+index 000000000..1d5dde345
+--- /dev/null
++++ b/src/viam/gen/component/switch/v1/switch_pb2.py
+@@ -0,0 +1,40 @@
++"""Generated protocol buffer code."""
++from google.protobuf import descriptor as _descriptor
++from google.protobuf import descriptor_pool as _descriptor_pool
++from google.protobuf import runtime_version as _runtime_version
++from google.protobuf import symbol_database as _symbol_database
++from google.protobuf.internal import builder as _builder
++_runtime_version.ValidateProtobufRuntimeVersion(_runtime_version.Domain.PUBLIC, 5, 29, 1, '', 'component/switch/v1/switch.proto')
++_sym_db = _symbol_database.Default()
++from ....common.v1 import common_pb2 as common_dot_v1_dot_common__pb2
++from google.api import annotations_pb2 as google_dot_api_dot_annotations__pb2
++from google.protobuf import struct_pb2 as google_dot_protobuf_dot_struct__pb2
++DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n component/switch/v1/switch.proto\x12\x18viam.component.switch.v1\x1a\x16common/v1/common.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1cgoogle/protobuf/struct.proto"s\n\x12SetPositionRequest\x12\x12\n\x04name\x18\x01 \x01(\tR\x04name\x12\x1a\n\x08position\x18\x02 \x01(\rR\x08position\x12-\n\x05extra\x18c \x01(\x0b2\x17.google.protobuf.StructR\x05extra"\x15\n\x13SetPositionResponse"W\n\x12GetPositionRequest\x12\x12\n\x04name\x18\x01 \x01(\tR\x04name\x12-\n\x05extra\x18c \x01(\x0b2\x17.google.protobuf.StructR\x05extra"1\n\x13GetPositionResponse\x12\x1a\n\x08position\x18\x01 \x01(\rR\x08position"`\n\x1bGetNumberOfPositionsRequest\x12\x12\n\x04name\x18\x01 \x01(\tR\x04name\x12-\n\x05extra\x18c \x01(\x0b2\x17.google.protobuf.StructR\x05extra"N\n\x1cGetNumberOfPositionsResponse\x12.\n\x13number_of_positions\x18\x01 \x01(\rR\x11numberOfPositions2\xb9\x05\n\rSwitchService\x12\xa5\x01\n\x0bSetPosition\x12,.viam.component.switch.v1.SetPositionRequest\x1a-.viam.component.switch.v1.SetPositionResponse"9\x82\xd3\xe4\x93\x023\x1a1/viam/api/v1/component/switch/{name}/set_position\x12\xa5\x01\n\x0bGetPosition\x12,.viam.component.switch.v1.GetPositionRequest\x1a-.viam.component.switch.v1.GetPositionResponse"9\x82\xd3\xe4\x93\x023\x1a1/viam/api/v1/component/switch/{name}/get_position\x12\xcb\x01\n\x14GetNumberOfPositions\x125.viam.component.switch.v1.GetNumberOfPositionsRequest\x1a6.viam.component.switch.v1.GetNumberOfPositionsResponse"D\x82\xd3\xe4\x93\x02>\x1a</viam/api/v1/component/switch/{name}/get_number_of_positions\x12\x89\x01\n\tDoCommand\x12 .viam.common.v1.DoCommandRequest\x1a!.viam.common.v1.DoCommandResponse"7\x82\xd3\xe4\x93\x021"//viam/api/v1/component/switch/{name}/do_commandBC\n\x1ccom.viam.component.switch.v1Z#go.viam.com/api/component/switch/v1b\x06proto3')
++_globals = globals()
++_builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
++_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'component.switch.v1.switch_pb2', _globals)
++if not _descriptor._USE_C_DESCRIPTORS:
++    _globals['DESCRIPTOR']._loaded_options = None
++    _globals['DESCRIPTOR']._serialized_options = b'\n\x1ccom.viam.component.switch.v1Z#go.viam.com/api/component/switch/v1'
++    _globals['_SWITCHSERVICE'].methods_by_name['SetPosition']._loaded_options = None
++    _globals['_SWITCHSERVICE'].methods_by_name['SetPosition']._serialized_options = b'\x82\xd3\xe4\x93\x023\x1a1/viam/api/v1/component/switch/{name}/set_position'
++    _globals['_SWITCHSERVICE'].methods_by_name['GetPosition']._loaded_options = None
++    _globals['_SWITCHSERVICE'].methods_by_name['GetPosition']._serialized_options = b'\x82\xd3\xe4\x93\x023\x1a1/viam/api/v1/component/switch/{name}/get_position'
++    _globals['_SWITCHSERVICE'].methods_by_name['GetNumberOfPositions']._loaded_options = None
++    _globals['_SWITCHSERVICE'].methods_by_name['GetNumberOfPositions']._serialized_options = b'\x82\xd3\xe4\x93\x02>\x1a</viam/api/v1/component/switch/{name}/get_number_of_positions'
++    _globals['_SWITCHSERVICE'].methods_by_name['DoCommand']._loaded_options = None
++    _globals['_SWITCHSERVICE'].methods_by_name['DoCommand']._serialized_options = b'\x82\xd3\xe4\x93\x021"//viam/api/v1/component/switch/{name}/do_command'
++    _globals['_SETPOSITIONREQUEST']._serialized_start = 146
++    _globals['_SETPOSITIONREQUEST']._serialized_end = 261
++    _globals['_SETPOSITIONRESPONSE']._serialized_start = 263
++    _globals['_SETPOSITIONRESPONSE']._serialized_end = 284
++    _globals['_GETPOSITIONREQUEST']._serialized_start = 286
++    _globals['_GETPOSITIONREQUEST']._serialized_end = 373
++    _globals['_GETPOSITIONRESPONSE']._serialized_start = 375
++    _globals['_GETPOSITIONRESPONSE']._serialized_end = 424
++    _globals['_GETNUMBEROFPOSITIONSREQUEST']._serialized_start = 426
++    _globals['_GETNUMBEROFPOSITIONSREQUEST']._serialized_end = 522
++    _globals['_GETNUMBEROFPOSITIONSRESPONSE']._serialized_start = 524
++    _globals['_GETNUMBEROFPOSITIONSRESPONSE']._serialized_end = 602
++    _globals['_SWITCHSERVICE']._serialized_start = 605
++    _globals['_SWITCHSERVICE']._serialized_end = 1302
+\ No newline at end of file
+diff --git a/src/viam/gen/component/switch/v1/switch_pb2.pyi b/src/viam/gen/component/switch/v1/switch_pb2.pyi
+new file mode 100644
+index 000000000..d4718ba39
+--- /dev/null
++++ b/src/viam/gen/component/switch/v1/switch_pb2.pyi
+@@ -0,0 +1,109 @@
++"""
++@generated by mypy-protobuf.  Do not edit manually!
++isort:skip_file
++"""
++import builtins
++import google.protobuf.descriptor
++import google.protobuf.message
++import google.protobuf.struct_pb2
++import typing
++DESCRIPTOR: google.protobuf.descriptor.FileDescriptor
++
++@typing.final
++class SetPositionRequest(google.protobuf.message.Message):
++    DESCRIPTOR: google.protobuf.descriptor.Descriptor
++    NAME_FIELD_NUMBER: builtins.int
++    POSITION_FIELD_NUMBER: builtins.int
++    EXTRA_FIELD_NUMBER: builtins.int
++    name: builtins.str
++    position: builtins.int
++
++    @property
++    def extra(self) -> google.protobuf.struct_pb2.Struct:
++        ...
++
++    def __init__(self, *, name: builtins.str=..., position: builtins.int=..., extra: google.protobuf.struct_pb2.Struct | None=...) -> None:
++        ...
++
++    def HasField(self, field_name: typing.Literal['extra', b'extra']) -> builtins.bool:
++        ...
++
++    def ClearField(self, field_name: typing.Literal['extra', b'extra', 'name', b'name', 'position', b'position']) -> None:
++        ...
++global___SetPositionRequest = SetPositionRequest
++
++@typing.final
++class SetPositionResponse(google.protobuf.message.Message):
++    DESCRIPTOR: google.protobuf.descriptor.Descriptor
++
++    def __init__(self) -> None:
++        ...
++global___SetPositionResponse = SetPositionResponse
++
++@typing.final
++class GetPositionRequest(google.protobuf.message.Message):
++    DESCRIPTOR: google.protobuf.descriptor.Descriptor
++    NAME_FIELD_NUMBER: builtins.int
++    EXTRA_FIELD_NUMBER: builtins.int
++    name: builtins.str
++
++    @property
++    def extra(self) -> google.protobuf.struct_pb2.Struct:
++        ...
++
++    def __init__(self, *, name: builtins.str=..., extra: google.protobuf.struct_pb2.Struct | None=...) -> None:
++        ...
++
++    def HasField(self, field_name: typing.Literal['extra', b'extra']) -> builtins.bool:
++        ...
++
++    def ClearField(self, field_name: typing.Literal['extra', b'extra', 'name', b'name']) -> None:
++        ...
++global___GetPositionRequest = GetPositionRequest
++
++@typing.final
++class GetPositionResponse(google.protobuf.message.Message):
++    DESCRIPTOR: google.protobuf.descriptor.Descriptor
++    POSITION_FIELD_NUMBER: builtins.int
++    position: builtins.int
++
++    def __init__(self, *, position: builtins.int=...) -> None:
++        ...
++
++    def ClearField(self, field_name: typing.Literal['position', b'position']) -> None:
++        ...
++global___GetPositionResponse = GetPositionResponse
++
++@typing.final
++class GetNumberOfPositionsRequest(google.protobuf.message.Message):
++    DESCRIPTOR: google.protobuf.descriptor.Descriptor
++    NAME_FIELD_NUMBER: builtins.int
++    EXTRA_FIELD_NUMBER: builtins.int
++    name: builtins.str
++
++    @property
++    def extra(self) -> google.protobuf.struct_pb2.Struct:
++        ...
++
++    def __init__(self, *, name: builtins.str=..., extra: google.protobuf.struct_pb2.Struct | None=...) -> None:
++        ...
++
++    def HasField(self, field_name: typing.Literal['extra', b'extra']) -> builtins.bool:
++        ...
++
++    def ClearField(self, field_name: typing.Literal['extra', b'extra', 'name', b'name']) -> None:
++        ...
++global___GetNumberOfPositionsRequest = GetNumberOfPositionsRequest
++
++@typing.final
++class GetNumberOfPositionsResponse(google.protobuf.message.Message):
++    DESCRIPTOR: google.protobuf.descriptor.Descriptor
++    NUMBER_OF_POSITIONS_FIELD_NUMBER: builtins.int
++    number_of_positions: builtins.int
++
++    def __init__(self, *, number_of_positions: builtins.int=...) -> None:
++        ...
++
++    def ClearField(self, field_name: typing.Literal['number_of_positions', b'number_of_positions']) -> None:
++        ...
++global___GetNumberOfPositionsResponse = GetNumberOfPositionsResponse
+\ No newline at end of file
