@@ -162,26 +162,15 @@ def get_diff_analysis(client: genai.Client, current_dir: str, diff_output: str, 
     print(f"Input tokens from diffparser_prompt: {tokens}\n")
 
     # Generate content if AI is enabled, otherwise return empty response
-    if AI_ENABLED:
-        return client.models.generate_content(
-            model="gemini-2.5-flash-preview-05-20",
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                temperature=0.0,
-                response_mime_type="application/json",
-                response_schema=RequiredChanges
-            )
+    return client.models.generate_content(
+        model="gemini-2.5-flash-preview-05-20",
+        contents=prompt,
+        config=types.GenerateContentConfig(
+            temperature=0.0,
+            response_mime_type="application/json",
+            response_schema=RequiredChanges
         )
-    else:
-        return client.models.generate_content(
-            model="gemini-2.5-flash-preview-05-20",
-            contents="Empty prompt because AI is disabled",
-            config=types.GenerateContentConfig(
-                temperature=0.0,
-                response_mime_type="application/json",
-                response_schema=RequiredChanges
-            )
-        )
+    )
 
 
 def generate_implementations(client: genai.Client, current_dir: str, diff_analysis: types.GenerateContentResponse):

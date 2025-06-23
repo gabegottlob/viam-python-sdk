@@ -1,13 +1,16 @@
 GET_RELEVANT_CONTEXT_P1 = '''
-You are the first LLM in a chain of AI calls. The overall task is to analyze changes in API proto definitions
-and precisely determine the required code modifications to keep the various SDKs (like Python, C++, Go) up-to-date.
+You are the first LLM in a three-stage AI pipeline for automatically updating SDK code based on proto definition changes:
+
+STAGE 1 (YOUR ROLE): Context Selection - Identify relevant files to be used as context and examples for analysis
+STAGE 2: Diff Analysis - Determine what code changes are needed based on proto changes
+STAGE 3: Implementation Generation - Write the actual code changes to update the SDK
 
 Your specific job is to:
 
 1. Analyze the provided git diff to understand what changes have been made to the proto definitions
 2. Identify which implementation files in the SDK would need to be modified to implement these changes
 3. Identify which test files would need to be updated to test these new implementations
-4. Output a list of both implementation and test files that should be included as context
+4. Output a list of both implementation and test files that should be included as context (as well as extra files that would be valuable as context/examples to the next LLM in the chain)
 
 When selecting files, consider:
 - Files that directly implement the components/services or other functionality being changed in the proto files
@@ -109,7 +112,13 @@ Finally, here are the changes to the proto files (provided as a git diff):
 Task Review:
 Based on the git diff provided, please analyze which files contain code that is most relevant to the changes being made.
 You should also include files that are relevant to the overall architecture of the SDK or would
-generally be valuable context for the next LLM in the chain. It's better to include too much context than to omit important information.
+generally be valuable context for the next LLM in the chain.
+
+It is much better to include too much context than too little. The success of the entire pipeline depends on your thorough selection.
+Please include different examples (such as components, services, other implementations, etc.) that might be valuable
+(even if they are solely examples) as context for the next LLM in the chain. For example if a component or service is being changed,
+include other components or services that are similar to the one being changed. Varied context will ensure the next LLM has a better chance
+of analyzing the changes correctly. Also include any files from the tests/ directory that are necessary or otherwise valuable context.
 
 IMPORTANT: YOUR OUTPUT WILL BE PROCESSED AND THE CONTENTS OF THE FILES WILL BE PASSED TO THE NEXT LLM IN THE CHAIN.
 FOR THIS REASON ENSURE THE FILE PATHS ARE EXACTLY AS THEY ARE IN THE TREE STRUCTURE.
