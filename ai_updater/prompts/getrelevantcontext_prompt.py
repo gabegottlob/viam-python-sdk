@@ -107,7 +107,7 @@ Here is the tree structure of the tests directory:
 {tests_tree_structure}
 
 Finally, here are the changes to the proto files (provided as a git diff):
-{zsh_diff_output}
+{git_diff_output}
 
 Task Review:
 Based on the git diff provided, please analyze which files contain code that is most relevant to the changes being made.

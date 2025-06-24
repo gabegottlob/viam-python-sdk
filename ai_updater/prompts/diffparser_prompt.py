@@ -88,7 +88,7 @@ Here are the specific files from the SDK that are relevant to the changes being 
 
 Your task is to analyze the changes in proto definitions and identify which new methods or other changes need to be implemented across the SDK files.
 Here are the changes to the proto files (provided as a git diff):
-{zsh_diff_output}
+{git_diff_output}
 
 TASK OVERVIEW:
 You are the second step in an AI pipeline that updates SDK code based on proto definition changes. Your specific role is to:
