@@ -217,7 +217,9 @@ class AIUpdater:
                 filename_without_ext, file_ext = os.path.splitext(original_filename)
                 if self.args.test:
                     ai_filename = f"{filename_without_ext}{file_ext}"
-                    ai_generated_dir = os.path.join(os.path.dirname(self.sdk_root_dir), "ai_generated")
+                    dir_structure = os.path.relpath(original_file_dir, self.sdk_root_dir)
+                    ai_generated_dir = os.path.join(os.path.dirname(self.sdk_root_dir), "ai_generated", dir_structure)
+                    os.makedirs(ai_generated_dir, exist_ok=True)
                     ai_file_path = os.path.join(ai_generated_dir, ai_filename)
                 else:
                     ai_filename = f"{filename_without_ext}ai{file_ext}"
@@ -230,9 +232,15 @@ class AIUpdater:
         # Note: the way I am currently doing git diff excludes the _pb2.py files because from what I can tell they are not useful as LLM context
         git_diff_dir = os.path.join(self.sdk_root_dir, "src", "viam", "gen")
         if self.args.test:
-            git_diff_output = subprocess.check_output(["git", "diff", "HEAD~1", "HEAD", "--", git_diff_dir, ":!*_pb2.py"],
-                                                  text=True,
-                                                  cwd=self.sdk_root_dir)
+            scenario_dir = os.path.dirname(self.sdk_root_dir)
+            # Check if specific proto diff file was specified for testing reasons
+            if os.path.exists(os.path.join(scenario_dir, "proto_diff.txt")):
+                with open(os.path.join(scenario_dir, "proto_diff.txt"), "r") as f:
+                    git_diff_output = f.read()
+            else:
+                git_diff_output = subprocess.check_output(["git", "diff", "HEAD~1", "HEAD", "--", git_diff_dir, ":!*_pb2.py"],
+                                                        text=True,
+                                                        cwd=self.sdk_root_dir)
         else:
             git_diff_output = subprocess.check_output(["git", "diff", "workflow/update-proto~1", "workflow/update-proto", "--", git_diff_dir, ":!*_pb2.py"],
                                                   text=True,

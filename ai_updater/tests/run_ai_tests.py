@@ -1,6 +1,6 @@
 '''
 Proto update hashes to use as test cases:
-    1. Added new method to component: 11dab7c500de784a431ea771709c6adbef69e06b
+    1. Added new method to component: 8d6b63a0fade65b8054cafb849d844bcdb089761
         Merged Implementation: 11dab7c500de784a431ea771709c6adbef69e06b
     2. Added new field to app client: ef8ae496df44a8e881836e76e7e953ed5e6bbd4c
         Merged Implementation: 8c0fc88a80c1ac5d61acc7d523c0bb9443acf0b4
@@ -20,19 +20,22 @@ SCENARIOS = [
     {
         "name": "scenario-1",
         "description": "Added new method to component",
-        "pre_update_commit": "11dab7c500de784a431ea771709c6adbef69e06b",
+        "pre_implementation_commit": "8d6b63a0fade65b8054cafb849d844bcdb089761",
+        "specific_proto_diff_file": True,
         "repo_url": "git@github.com:viamrobotics/viam-python-sdk.git"
     },
     {
         "name": "scenario-2",
         "description": "Added new field to app client",
-        "pre_update_commit": "ef8ae496df44a8e881836e76e7e953ed5e6bbd4c",
+        "pre_implementation_commit": "ef8ae496df44a8e881836e76e7e953ed5e6bbd4c",
+        "specific_proto_diff_file": False,
         "repo_url": "git@github.com:viamrobotics/viam-python-sdk.git"
     },
     {
         "name": "scenario-3",
         "description": "Added entire new components (Button and Switch)",
-        "pre_update_commit": "e8818bce81be520a740bf3da725c8d816fe2aa4b",
+        "pre_implementation_commit": "e8818bce81be520a740bf3da725c8d816fe2aa4b",
+        "specific_proto_diff_file": False,
         "repo_url": "git@github.com:viamrobotics/viam-python-sdk.git"
     }
 ]
@@ -46,7 +49,7 @@ def test_ai_updater(scenario):
     with tempfile.TemporaryDirectory(dir=current_scenario_dir) as temp_dir:
         # Clone the repository and checkout the pre-update commit
         subprocess.run(["git", "clone", scenario["repo_url"], temp_dir], check=True, cwd=current_scenario_dir)
-        subprocess.run(["git", "checkout", scenario["pre_update_commit"]], check=True, cwd=temp_dir)
+        subprocess.run(["git", "checkout", scenario["pre_implementation_commit"]], check=True, cwd=temp_dir)
 
         # Clean and recreate the ai_generated directory for this scenario
         ai_generated_dir = os.path.join(tests_dir, scenario["name"], "ai_generated")
@@ -56,7 +59,7 @@ def test_ai_updater(scenario):
 
         # Runs AI updater with test flag
         python_path = sys.executable
-        subprocess.run([python_path, "../ai_updater.py", "--test", temp_dir],
+        subprocess.run([python_path, "../ai_updater.py", "--debug", "--test", temp_dir],
                        check=True,
                        env=os.environ.copy(),
                        cwd=tests_dir)
@@ -74,7 +77,12 @@ def test_ai_updater(scenario):
 
 if __name__ == "__main__":
     # This allows running the tests directly with python (without pytest)
-    for scenario in SCENARIOS:
-        print(f"Testing scenario: {scenario['name']} - {scenario['description']}")
-        test_ai_updater(scenario)
-        print(f"✅ Scenario {scenario['name']} passed!\n")
+    # for scenario in SCENARIOS:
+    #     print(f"Testing scenario: {scenario['name']} - {scenario['description']}")
+    #     test_ai_updater(scenario)
+    #     print(f"✅ Scenario {scenario['name']} passed!\n")
+
+    scenario = SCENARIOS[1]
+    print(f"Testing scenario: {scenario['name']} - {scenario['description']}")
+    test_ai_updater(scenario)
+    print(f"✅ Scenario {scenario['name']} passed!\n")
