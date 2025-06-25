@@ -82,7 +82,7 @@ if __name__ == "__main__":
     #     test_ai_updater(scenario)
     #     print(f"✅ Scenario {scenario['name']} passed!\n")
 
-    scenario = SCENARIOS[1]
+    scenario = SCENARIOS[0]
     print(f"Testing scenario: {scenario['name']} - {scenario['description']}")
     test_ai_updater(scenario)
     print(f"✅ Scenario {scenario['name']} passed!\n")

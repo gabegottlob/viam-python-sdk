@@ -10,18 +10,18 @@ Your specific job is to:
 1. Analyze the provided git diff to understand what changes have been made to the proto definitions
 2. Identify which implementation files in the SDK would need to be modified to implement these changes
 3. Identify which test files would need to be updated to test these new implementations
-4. Output a list of both implementation and test files that should be included as context (as well as extra files that would be valuable as context/examples to the next LLM in the chain)
+4. Output a list of both implementation and test files that should be included as context.
 
-When selecting files, consider:
-- Files that directly implement the components/services or other functionality being changed in the proto files
-- Files that contain similar patterns or examples that would be helpful for implementing the changes
-- Test files that verify the functionality being changed
-- Base classes or interfaces that the changed components inherit from or implement
+When selecting files, prioritize:
+- Files that directly implement the components/services or other functionality being changed in the proto files.
+- Test files that verify the functionality being changed.
+- Base classes or interfaces that the changed functionality inherits from or implements.
+- Additionally, include files that contain similar patterns or examples if they would be valuable in demonstrating how to implement the required changes. This includes analogous components or services if the primary change is to a component or service, but always ensure these examples are truly helpful and not simply adding unnecessary bulk.
 
 Your output should be a list of file paths, with a brief explanation of why each file is relevant.
 
 The next LLM in the chain will use your output to gather code from these files and analyze what specific code changes need to be implemented.
-Your analysis should be thorough but focused on identifying only the most relevant files to keep the context manageable.
+Your analysis should be thorough but focused on identifying the most relevant and *actionable* files to keep the context manageable and efficient.
 
 Here is a rough outline of the SDK architecture to help you understand its structure and functionality:
 === SDK ARCHITECTURE ===
@@ -53,7 +53,7 @@ Here is a rough outline of the SDK architecture to help you understand its struc
 4. Gen (src/viam/gen/):
    - Contains auto-generated Python code from the proto files
    - Provides Python classes, services, and message types for use throughout the SDK
-   - These files are included as context to help you understand the available classes and methods, but you should NOT edit or suggest changes to them, as they will be regenerated automatically from the proto definitions.
+   - IMPORTANT NOTE: You should NOT select any files from this directory, as they will be provided to the next LLM separately.
 
 5. Resource (src/viam/resource/):
    - Manages the fundamental units of the SDK
@@ -111,15 +111,10 @@ Finally, here are the changes to the proto files (provided as a git diff):
 
 Task Review:
 Based on the git diff provided, please analyze which files contain code that is most relevant to the changes being made.
-You should also include files that are relevant to the overall architecture of the SDK or would
-generally be valuable context for the next LLM in the chain.
 
-It is much better to include too much context than too little. The success of the entire pipeline depends on your thorough selection.
-Please include different examples (such as components, services, other implementations, etc.) that might be valuable
-(even if they are solely examples) as context for the next LLM in the chain. For example if a component or service is being changed,
-include other components or services that are similar to the one being changed. Varied context will ensure the next LLM has a better chance
-of analyzing the changes correctly. Also include any files from the tests/ directory that are necessary or otherwise valuable context.
+Your selection of files for context should prioritize those that are directly impacted by the proto changes or are immediate, critical dependencies for understanding the required implementations.
 
-IMPORTANT: YOUR OUTPUT WILL BE PROCESSED AND THE CONTENTS OF THE FILES WILL BE PASSED TO THE NEXT LLM IN THE CHAIN.
-FOR THIS REASON ENSURE THE FILE PATHS ARE EXACTLY AS THEY ARE IN THE TREE STRUCTURE.
+When considering example files, only include them if they are relevant and could illustrate a pattern or convention crucial for the changes. Avoid including extraneous files that do not offer unique, actionable context. The goal is to provide sufficient context to enable the next LLM to accurately identify and generate the necessary code changes efficiently.
+
+Also include any files from the tests/ directory that are directly necessary or provide highly relevant examples for testing the new functionality.
 '''

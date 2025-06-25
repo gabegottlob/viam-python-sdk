@@ -35,7 +35,7 @@ Here is a rough outline of the SDK to help you understand its architecture and f
 4. Gen (src/viam/gen/):
    - Contains auto-generated Python code from the proto files
    - Provides Python classes, services, and message types for use throughout the SDK
-   - These files are included as context to help you understand the available classes and methods, but you should NOT edit or suggest changes to them, as they will be regenerated automatically from the proto definitions.
+   - These files are auto-generated and you should NOT edit or suggest changes to them, as they will be regenerated automatically from the proto definitions.
 
 5. Resource (src/viam/resource/):
    - Manages the fundamental units of the SDK
@@ -94,17 +94,25 @@ TASK OVERVIEW:
 You are the second step in an AI pipeline that updates SDK code based on proto definition changes. Your specific role is to:
 
 1. Analyze the proto changes in the git diff
-2. Identify which files need to be modified to implement these changes
-3. Provide detailed instructions for what needs to be implemented in each file
+2. Accurately identify *only* the files that need to be modified to implement these changes
+3. Provide precise and comprehensive instructions for what needs to be implemented or changed within each of those identified files.
 
 Based on these changes and your understanding of the codebase, output the paths of the files that need to be updated, and what needs to be implemented within that file.
-These instructions will then be passed to another Gemini LLM which will implement the changes, so make your instructions as relevant and detailed as necessary
-for another Gemini LLM to interpret. Include as much detail as is necessary so that the other LLM can implement the changes when given the original files and the instructions.
 
-IMPORTANT: ALSO IDENTIFY ANY FILES WITHIN THE tests/ DIRECTORY THAT NEED TO BE UPDATED.
-For each implementation file that needs changes, check if there are corresponding files that would need to be updated to test the new functionality.
-Include these in your list of files to update alongisde the necessary changes.
+These instructions will then be passed to another Gemini LLM which will implement the changes. Therefore, your instructions must be:
+- **Highly relevant and precise**: Directly address the required changes stemming from the proto diff.
+- **Extremely detailed**: Include all necessary information for the next LLM to regenerate the *complete* file contents, preserving original functionality and formatting. This includes:
+    - Exact method signatures (including parameters, return types)
+    - Class structure and inheritance details
+    - Specific code snippets for new or modified logic
+    - Required import statements (both existing and new ones if applicable)
+    - Any necessary comments or docstrings
+    - Clear indications of where new code should be inserted or existing code modified, maintaining correct Python syntax, indentation, and newlines.
+
+IMPORTANT: ALSO IDENTIFY ANY FILES WITHIN the `tests/` DIRECTORY THAT NEED TO BE UPDATED.
+For each implementation file that needs changes, you **must** identify if there are corresponding test files that would need to be updated to test the new functionality.
+Include these test files in your list, and provide specific instructions for adding or modifying test cases to cover the new functionality. These instructions should be as detailed as the implementation instructions.
 
 IMPORTANT: THE ORIGINAL FUNCTIONALITY OF THE SDK MUST REMAIN EXACTLY INTACT. THESE CHANGES WILL BE DIRECTLY REINSERTED INTO THE CODEBASE.
-ONLY INCLUDE IMPLEMENTATION DETAILS IN YOUR RESPONSE THAT ARE ABSOLUTELY NECESSARY. DO NOT INCLUDE EXTRANEOUS FILES/CHANGES IN YOUR RESPONSE.
+ENSURE YOUR `files_to_update` LIST CONTAINS ONLY THE FILES THAT REQUIRE CHANGES. DO NOT INCLUDE EXTRANEOUS FILES IN YOUR RESPONSE.
 '''

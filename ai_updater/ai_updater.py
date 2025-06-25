@@ -93,16 +93,22 @@ class AIUpdater:
             tests_tree_structure=tests_tree_output,
             git_diff_output=git_diff_output
         )
-        tokens = self.client.models.count_tokens(model="gemini-2.5-flash-preview-05-20", contents=prompt)
+        tokens = self.client.models.count_tokens(model="gemini-2.5-pro", contents=prompt)
         print(f"Input tokens from getrelevantdirs_prompt: {tokens}\n")
 
         response = self.client.models.generate_content(
-            model="gemini-2.5-flash-preview-05-20",
+            model="gemini-2.5-flash",
             contents=prompt,
             config=types.GenerateContentConfig(
                 temperature=0.0,
                 response_mime_type="application/json",
-                response_schema=ContextFiles
+                response_schema=ContextFiles,
+                thinking_config=types.ThinkingConfig(thinking_budget=-1),
+                system_instruction="""You are the first stage in an AI pipeline for updating SDK code.
+                Your role is to act as an intelligent context selector. Given a git diff and SDK directory structures,
+                identify and output only the most relevant implementation and test files that are directly impacted or
+                provide crucial analogous examples. Be thorough but concise; the goal is to provide sufficient,
+                focused context."""
             )
         )
         return response
@@ -144,17 +150,24 @@ class AIUpdater:
         prompt = DIFF_PARSER_P1.format(selected_context_files=relevant_context, git_diff_output=git_diff_output)
 
         # Count tokens for logging
-        tokens = self.client.models.count_tokens(model="gemini-2.5-flash-preview-05-20", contents=prompt)
+        tokens = self.client.models.count_tokens(model="gemini-2.5-pro", contents=prompt)
         print(f"Input tokens from diffparser_prompt: {tokens}\n")
 
         # Generate content if AI is enabled, otherwise return empty response
         return self.client.models.generate_content(
-            model="gemini-2.5-flash-preview-05-20",
+            model="gemini-2.5-flash",
             contents=prompt,
             config=types.GenerateContentConfig(
                 temperature=0.0,
                 response_mime_type="application/json",
-                response_schema=RequiredChanges
+                response_schema=RequiredChanges,
+                thinking_config=types.ThinkingConfig(thinking_budget=-1),
+                system_instruction="""You are the second stage in an AI pipeline for updating SDK code.
+                Your role is to act as a highly precise code change analyst. Given a git diff and selected relevant code context,
+                your task is to accurately identify *only* the necessary code modifications and generate extremely detailed,
+                unambiguous implementation instructions for the next AI stage. Focus solely on the required changes;
+                do not invent or suggest extraneous modifications. Assume the next stage has no context of the existing codebase
+                and will simply be following your instructions."""
             )
         )
 
@@ -189,23 +202,32 @@ class AIUpdater:
         prompt += FUNCTION_GENERATOR_P2
 
         # Count tokens for logging
-        tokens = self.client.models.count_tokens(model="gemini-2.5-flash-preview-05-20", contents=prompt)
+        tokens = self.client.models.count_tokens(model="gemini-2.5-flash-lite-preview-06-17", contents=prompt)
         print(f"Input tokens from funcgenerator_prompt: {tokens} \n")
 
         # Generate and write files if AI is enabled
         if not self.args.noai:
             response2 = self.client.models.generate_content(
-                model="gemini-2.5-flash-preview-05-20",
+                model="gemini-2.5-flash-lite-preview-06-17",
                 contents=prompt,
                 config=types.GenerateContentConfig(
                     temperature=0.0,
                     response_mime_type="application/json",
-                    response_schema=GeneratedFiles
+                    response_schema=GeneratedFiles,
+                    thinking_config=types.ThinkingConfig(thinking_budget=0),
+                    system_instruction='''You are the third stage in an AI pipeline designed to update the Viam robotics SDK. Your role is to act as an expert Python developer.
+                    You will receive specific implementation details from a previous AI stage and the full content of existing SDK files.
+                    Your task is to regenerate the *complete* content of these files, integrating only the necessary new methods or edits as instructed.
+                    It is CRITICAL that you preserve the exact original functionality, as well as ALL formatting, including newlines, indentation,
+                    and whitespace, to ensure the code is perfectly readable and functional.
+                    Your output for each file must be the complete, valid, and perfectly formatted Python code (as well as the filepath of the file)'''
                 )
-            )
+                )
 
             # Write the generated content to files
             parsed_response2: GeneratedFiles = response2.parsed
+            if self.args.debug:
+                self.write_to_file(os.path.join(self.current_dir, "generatedfilestest.txt"), response2.text)
             if(len(parsed_response2.file_paths) != len(parsed_response2.file_contents)):
                 print("ERROR: AI OUTPUT A DIFFERENT NUMBER OF FILENAMES THAN GENERATED FILE CONTENTS")
                 return
