@@ -1,5 +1,5 @@
 GET_RELEVANT_CONTEXT_P1 = '''
-You are the first LLM in a three-stage AI pipeline for automatically updating SDK code based on proto definition changes:
+You are the first Gemini LLM in a three-stage AI pipeline for automatically updating SDK code based on proto definition changes:
 
 STAGE 1 (YOUR ROLE): Context Selection - Identify relevant files to be used as context and examples for analysis
 STAGE 2: Diff Analysis - Determine what code changes are needed based on proto changes
@@ -114,7 +114,9 @@ Based on the git diff provided, please analyze which files contain code that is 
 
 Your selection of files for context should prioritize those that are directly impacted by the proto changes or are immediate, critical dependencies for understanding the required implementations.
 
-When considering example files, only include them if they are relevant and could illustrate a pattern or convention crucial for the changes. Avoid including extraneous files that do not offer unique, actionable context. The goal is to provide sufficient context to enable the next LLM to accurately identify and generate the necessary code changes efficiently.
+When considering example files, only include them if they are relevant and could illustrate a pattern or convention crucial for the changes. Avoid including extraneous files that do not offer unique, actionable context.
 
 Also include any files from the tests/ directory that are directly necessary or provide highly relevant examples for testing the new functionality.
+
+In total, your selected files should enable the next AI stage to understand existing patterns and accurately deduce required code changes based on the proto diff.
 '''
