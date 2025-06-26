@@ -9,6 +9,13 @@ Proto update hashes to use as test cases:
         Merged Implementation (Switch): 096a5083f0d2c8b1152e8aa3b6ed233b1af60623
 '''
 
+'''
+To run the tests via pytest, run the following command:
+pytest test_ai_updater.py
+or to specify specific scenarios, run the following command:
+pytest test_ai_updater.py -k "scenario-1 or scenario-2"
+'''
+
 import os
 import sys
 import subprocess
@@ -40,6 +47,7 @@ SCENARIOS = [
     }
 ]
 
+@pytest.mark.parametrize("scenario", SCENARIOS, ids=[s["name"] for s in SCENARIOS])
 def test_ai_updater(scenario):
     """Test the AI updater against a specific scenario."""
     tests_dir = os.path.dirname(os.path.abspath(__file__))
@@ -74,15 +82,3 @@ def test_ai_updater(scenario):
                 rel_path = os.path.relpath(human_file, human_output_dir)
                 ai_file = os.path.join(ai_generated_dir, rel_path)
                 assert os.path.exists(ai_file), f"AI did not generate expected file: {rel_path}"
-
-if __name__ == "__main__":
-    # This allows running the tests directly with python (without pytest)
-    # for scenario in SCENARIOS:
-    #     print(f"Testing scenario: {scenario['name']} - {scenario['description']}")
-    #     test_ai_updater(scenario)
-    #     print(f"✅ Scenario {scenario['name']} passed!\n")
-
-    scenario = SCENARIOS[0]
-    print(f"Testing scenario: {scenario['name']} - {scenario['description']}")
-    test_ai_updater(scenario)
-    print(f"✅ Scenario {scenario['name']} passed!\n")
