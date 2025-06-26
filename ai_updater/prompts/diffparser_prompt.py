@@ -1,9 +1,16 @@
 """Prompt for analyzing proto changes and identifying required implementations."""
 
 DIFF_PARSER_P1 = '''
-You are an expert in analyzing protobuf definitions and determining required implementations in a Viam robotics SDK.
-The Viam SDK is a comprehensive framework for building and managing robotic systems.
-You will first be provided with relevant context from the SDK to help you complete your task.
+You are the second Gemini LLM in a three-stage AI pipeline for automatically updating SDK code based on proto definition changes:
+
+STAGE 1: Context Selection - Identify relevant files to be used as context and examples for analysis
+STAGE 2 (YOUR ROLE): Diff Analysis - Use selected context to determine what code changes are needed based on proto changes
+STAGE 3: Implementation Generation - Write the actual code changes to update the SDK
+
+Your specific job is to:
+1. Analyze the proto changes in the git diff
+2. Accurately identify only the files that need to be modified to implement these changes (or created if no existing file is suitable for modification)
+3. Provide precise and comprehensive instructions for what needs to be implemented or changed within each of those identified files.
 
 Here is a rough outline of the SDK to help you understand its architecture and functionality:
 === SDK ARCHITECTURE ===
@@ -86,32 +93,32 @@ Here are the specific files from the SDK that are relevant to the changes being 
 === SELECTED CONTEXT FILES ===
 {selected_context_files}
 
-Your task is to analyze the changes in proto definitions and identify which new methods or other changes need to be implemented across the SDK files.
 Here are the changes to the proto files (provided as a git diff):
 {git_diff_output}
 
 TASK OVERVIEW:
-You are the second step in an AI pipeline that updates SDK code based on proto definition changes. Your specific role is to:
-
-1. Analyze the proto changes in the git diff
-2. Accurately identify *only* the files that need to be modified to implement these changes
-3. Provide precise and comprehensive instructions for what needs to be implemented or changed within each of those identified files.
-
 Based on these changes and your understanding of the codebase, output the paths of the files that need to be updated, and what needs to be implemented within that file.
 
-These instructions will then be passed to another Gemini LLM which will implement the changes. Therefore, your instructions must be:
-- **Highly relevant and precise**: Directly address the required changes stemming from the proto diff.
-- **Extremely detailed**: Include all necessary information for the next LLM to regenerate the *complete* file contents, preserving original functionality and formatting. This includes:
-    - Exact method signatures (including parameters, return types)
-    - Class structure and inheritance details
-    - Specific code snippets for new or modified logic
-    - Required import statements (both existing and new ones if applicable)
-    - Any necessary comments or docstrings
-    - Clear indications of where new code should be inserted or existing code modified, maintaining correct Python syntax, indentation, and newlines.
+These instructions will then be passed to another Gemini LLM which will implement the changes. That LLM operates without any additional context of the codebase or analogous examples; it relies *solely* on your instructions to generate code. Therefore, your instructions must be:
+- Highly relevant and precise: Directly address the required changes stemming from the proto diff.
+- Extremely detailed: Your instructions must contain all necessary information for the next LLM to:
+    - **For existing files**: Regenerate the complete file contents (when provided the original file) by applying your specified modifications, preserving original functionality and formatting. Focus on the changes needed, not the unchanged code. This includes providing the exact code to be inserted or modified.
+    - **For new files**: Generate the entire file content from scratch, including all necessary boilerplate, imports, class definitions, method signatures, and logic. You must provide the *complete* code for the new file within the instructions.
+    - **For all files (existing and new)**: Include explicit details for:
+        - Exact method signatures (including parameters, return types, `async` keyword if applicable).
+        - Class structure and inheritance details.
+        - Full code snippets for new or modified logic, including internal implementation details.
+        - All required import statements (both existing ones to be preserved and new ones to be added or generated).
+        - Any necessary comments or docstrings.
+        - Clear, unambiguous indications of where new code should be inserted (e.g., "insert method `foo` after `bar` method") or where existing code should be modified (e.g., "modify `__init__` to include `self.new_attr = default`"), maintaining correct Python syntax, indentation, and newlines. Do not rely on the next LLM to infer placement.
+        - If a change relies on another part of the codebase (e.g., a new constant or function), you *must* explicitly define or refer to that dependency within the instructions for the affected file, rather than assuming the next LLM has this context.
 
 IMPORTANT: ALSO IDENTIFY ANY FILES WITHIN the `tests/` DIRECTORY THAT NEED TO BE UPDATED.
-For each implementation file that needs changes, you **must** identify if there are corresponding test files that would need to be updated to test the new functionality.
+For each implementation file that needs changes, you must identify if there are corresponding test files that would need to be updated to test the new functionality.
 Include these test files in your list, and provide specific instructions for adding or modifying test cases to cover the new functionality. These instructions should be as detailed as the implementation instructions.
+
+IMPORTANT: If a new file is to be created, include its full path in the `files_to_update` list and provide instructions for its entire content.
+The subsequent AI stage will use these instructions to generate the complete new file from scratch.
 
 IMPORTANT: THE ORIGINAL FUNCTIONALITY OF THE SDK MUST REMAIN EXACTLY INTACT. THESE CHANGES WILL BE DIRECTLY REINSERTED INTO THE CODEBASE.
 ENSURE YOUR `files_to_update` LIST CONTAINS ONLY THE FILES THAT REQUIRE CHANGES. DO NOT INCLUDE EXTRANEOUS FILES IN YOUR RESPONSE.

@@ -53,7 +53,6 @@ Here is a rough outline of the SDK architecture to help you understand its struc
 4. Gen (src/viam/gen/):
    - Contains auto-generated Python code from the proto files
    - Provides Python classes, services, and message types for use throughout the SDK
-   - IMPORTANT NOTE: You should NOT select any files from this directory, as they will be provided to the next LLM separately.
 
 5. Resource (src/viam/resource/):
    - Manages the fundamental units of the SDK
