@@ -72,6 +72,8 @@ from viam.proto.app.datapipelines import (
     ListDataPipelineRunsResponse,
     ListDataPipelinesRequest,
     ListDataPipelinesResponse,
+    UpdateDataPipelineRequest,
+    UpdateDataPipelineResponse,
 )
 from viam.proto.app.datapipelines import (
     DataPipeline as ProtoDataPipeline,
@@ -107,6 +109,7 @@ from viam.proto.app.datasync import (
     UploadMetadata,
 )
 from viam.utils import ValueTypes, _alias_param, create_filter, datetime_to_timestamp, struct_to_dict
+
 
 LOGGER = logging.getLogger(__name__)
 
@@ -271,7 +274,6 @@ class DataClient:
         """Whether the data pipeline is enabled"""
 
         data_source_type: TabularDataSourceType.ValueType
-        """The type of data source for the data pipeline"""
 
         @classmethod
         def from_proto(cls, data_pipeline: ProtoDataPipeline) -> Self:
@@ -304,9 +306,9 @@ class DataClient:
         """The time the data pipeline run ended"""
 
         data_start_time: datetime
-        """The start time of the data that was processed in the run."""
+        """The start time of the data that was processed in the run."
         data_end_time: datetime
-        """The end time of the data that was processed in the run."""
+        """The end time of the data that was processed in the run."
 
         @classmethod
         def from_proto(cls, data_pipeline_run: ProtoDataPipelineRun) -> Self:
@@ -455,7 +457,7 @@ class DataClient:
         if dest:
             try:
                 file = open(dest, "w")
-                file.write(f"{[str(d) for d in data]}")
+                file.write(f"{ [str(d) for d in data]}")
                 file.flush()
             except Exception as e:
                 LOGGER.error(f"Failed to write tabular data to file {dest}", exc_info=e)
@@ -741,7 +743,7 @@ class DataClient:
         if dest:
             try:
                 file = open(dest, "w")
-                file.write(f"{[str(d) for d in data]}")
+                file.write(f"{ [str(d) for d in data]}")
                 file.flush()
             except Exception as e:
                 LOGGER.error(f"Failed to write binary data to file {dest}", exc_info=e)
@@ -1566,12 +1568,14 @@ class DataClient:
                 method_name='Readings',
                 tags=["sensor_data"],
                 data_request_times=[(time_requested, time_received)],
-                tabular_data=[{
-                    'readings': {
-                        'linear_velocity': {'x': 0.5, 'y': 0.0, 'z': 0.0},
-                        'angular_velocity': {'x': 0.0, 'y': 0.0, 'z': 0.1}
+                tabular_data=[
+                    {
+                        'readings': {
+                            'linear_velocity': {'x': 0.5, 'y': 0.0, 'z': 0.0},
+                            'angular_velocity': {'x': 0.0, 'y': 0.0, 'z': 0.1}
+                        }
                     }
-                }]
+                ]
             )
 
         Args:
@@ -1657,7 +1661,7 @@ class DataClient:
             time_received = datetime(2023, 6, 5, 11, 0, 3)
 
             file_id = await data_client.streaming_data_capture_upload(
-                data="byte-data-to-upload",
+                data=b"byte-data-to-upload",
                 part_id="INSERT YOUR PART ID",
                 file_ext="png",
                 component_type='motor',
@@ -1914,8 +1918,8 @@ class DataClient:
             mql_binary (List[Dict[str, Any]]):The MQL pipeline to run, as a list of MongoDB aggregation pipeline stages.
             schedule (str): A cron expression representing the expected execution schedule in UTC (note this also
                 defines the input time window; an hourly schedule would process 1 hour of data at a time).
-            data_source_type (TabularDataSourceType): The type of data source to use for the pipeline.
-                Defaults to TabularDataSourceType.TABULAR_DATA_SOURCE_TYPE_STANDARD.
+            data_source_type (TabularDataSourceType.ValueType): The type of data source for the pipeline.
+                Defaults to `TABULAR_DATA_SOURCE_TYPE_STANDARD`.
 
         Returns:
             str: The ID of the newly created pipeline.
@@ -1970,6 +1974,33 @@ class DataClient:
         request = ListDataPipelineRunsRequest(id=id, page_size=page_size, page_token=page_token)
         response: ListDataPipelineRunsResponse = await self._data_pipelines_client.ListDataPipelineRuns(request, metadata=self._metadata)
         return DataClient.DataPipelineRunsPage.from_proto(response, self, page_size)
+
+    async def update_data_pipeline(
+        self,
+        id: str,
+        name: str,
+        mql_binary: List[Dict[str, Any]],
+        schedule: str,
+        data_source_type: TabularDataSourceType.ValueType = TabularDataSourceType.TABULAR_DATA_SOURCE_TYPE_STANDARD,
+    ) -> DataPipeline:
+        """Update a data pipeline.
+
+        Args:
+            id (str): The ID of the data pipeline to update.
+            name (str): The name of the pipeline.
+            mql_binary (List[Dict[str, Any]]): The MQL pipeline to run, as a list of MongoDB aggregation pipeline stages.
+            schedule (str): A cron expression representing the expected execution schedule in UTC (note this also
+                defines the input time window; an hourly schedule would process 1 hour of data at a time).
+            data_source_type (TabularDataSourceType.ValueType): The type of data source for the pipeline.
+                Defaults to `TABULAR_DATA_SOURCE_TYPE_STANDARD`.
+
+        Returns:
+            DataPipeline: The updated data pipeline.
+        """
+        binary: List[bytes] = [bson.encode(query) for query in mql_binary]
+        request = UpdateDataPipelineRequest(id=id, name=name, mql_binary=binary, schedule=schedule, data_source_type=data_source_type)
+        response: UpdateDataPipelineResponse = await self._data_pipelines_client.UpdateDataPipeline(request, metadata=self._metadata)
+        return DataClient.DataPipeline.from_proto(response.data_pipeline)
 
     @staticmethod
     def create_filter(
