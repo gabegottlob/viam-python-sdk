@@ -10,6 +10,7 @@ from viam.proto.app.data import TabularDataSourceType
 
 from .mocks.services import MockDataPipelines
 
+
 ID = "VIAM_DATAPIPELINE_1"
 NAME = "datapipeline"
 ORG_ID = "org_id"
@@ -31,7 +32,7 @@ PROTO_DATA_PIPELINE = DataPipeline(
     enabled=True,
     created_on=TIMESTAMP_PROTO,
     updated_at=TIMESTAMP_PROTO,
-    data_source_type=DATA_SOURCE_TYPE,
+    data_source_type=TabularDataSourceType.TABULAR_DATA_SOURCE_TYPE_STANDARD,
 )
 PROTO_DATA_PIPELINES = [PROTO_DATA_PIPELINE]
 
@@ -75,6 +76,11 @@ def service() -> MockDataPipelines:
         ID,
         PROTO_DATA_PIPELINES,
         PROTO_DATA_PIPELINE_RUNS,
+        updated_id="",
+        updated_name="",
+        updated_mql_binary=[],
+        updated_schedule="",
+        updated_data_source_type=TabularDataSourceType.TABULAR_DATA_SOURCE_TYPE_UNSPECIFIED,
     )
 
 
@@ -82,13 +88,13 @@ class TestClient:
     async def test_create_data_pipeline(self, service: MockDataPipelines):
         async with ChannelFor([service]) as channel:
             client = DataClient(channel, DATA_SERVICE_METADATA)
-            id = await client.create_data_pipeline(ORG_ID, NAME, MQL_BINARY, SCHEDULE)
+            id = await client.create_data_pipeline(ORG_ID, NAME, MQL_BINARY, SCHEDULE, TabularDataSourceType.TABULAR_DATA_SOURCE_TYPE_STANDARD)
             assert id == ID
             assert service.name == NAME
             assert service.org_id == ORG_ID
             assert service.schedule == SCHEDULE
             assert service.mql_binary == MQL_BINARY
-            assert service.data_source_type == STANDARD_DATA_SOURCE_TYPE
+            assert service.data_source_type == TabularDataSourceType.TABULAR_DATA_SOURCE_TYPE_STANDARD
 
     async def test_get_data_pipeline(self, service: MockDataPipelines):
         async with ChannelFor([service]) as channel:
@@ -114,3 +120,14 @@ class TestClient:
             runs = await client.list_data_pipeline_runs(ID)
             runs._client = None
             assert runs == DATA_PIPELINE_RUNS_PAGE
+
+    async def test_update_data_pipeline(self, service: MockDataPipelines):
+        async with ChannelFor([service]) as channel:
+            client = DataClient(channel, DATA_SERVICE_METADATA)
+            pipeline = await client.update_data_pipeline(ID, NAME, MQL_BINARY, UPDATED_SCHEDULE, TabularDataSourceType.TABULAR_DATA_SOURCE_TYPE_STANDARD)
+            assert pipeline == DATA_PIPELINE
+            assert service.updated_id == ID
+            assert service.updated_name == NAME
+            assert service.updated_mql_binary == MQL_BINARY
+            assert service.updated_schedule == UPDATED_SCHEDULE
+            assert service.updated_data_source_type == TabularDataSourceType.TABULAR_DATA_SOURCE_TYPE_STANDARD
