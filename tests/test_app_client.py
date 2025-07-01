@@ -12,6 +12,8 @@ from viam.proto.app import (
     AuthorizationDetails,
     AuthorizedPermissions,
     FragmentHistoryEntry,
+    GetAppBrandingRequest,
+    GetAppBrandingResponse,
     Location,
     LocationAuth,
     Model,
@@ -209,6 +211,9 @@ MODULE_FILE_INFO = ModuleFileInfo(module_id=ID, version=VERSION, platform=PLATFO
 FILE = b"file"
 USER_DEFINED_METADATA = {"number": 0, "string": "string"}
 
+APP_BRANDING_FRAGMENT_IDS = ["frag1", "frag2"]
+APP_BRANDING = AppBranding(fragment_ids=APP_BRANDING_FRAGMENT_IDS)
+
 
 @pytest.fixture(scope="function")
 def service() -> MockApp:
@@ -235,6 +240,7 @@ def service() -> MockApp:
         api_keys_with_authorizations=API_KEYS_WITH_AUTHORIZATIONS,
         items=[ITEM],
         package_type=PACKAGE_TYPE,
+        app_branding_fragment_ids=APP_BRANDING_FRAGMENT_IDS,
     )
 
 
@@ -827,3 +833,10 @@ class TestClient:
             await client.update_robot_part_metadata(ID, USER_DEFINED_METADATA)
             user_defined_metadata = await client.get_robot_part_metadata(ID)
             assert user_defined_metadata == USER_DEFINED_METADATA
+
+    async def test_get_app_branding(self, service: MockApp):
+        async with ChannelFor([service]) as channel:
+            client = AppClient(channel, METADATA, ID)
+            branding = await client.get_app_branding()
+            assert branding.fragment_ids == APP_BRANDING_FRAGMENT_IDS
+            assert service.app_branding_fragment_ids == APP_BRANDING_FRAGMENT_IDS

@@ -48,6 +48,8 @@ from viam.proto.app import (
     DeleteRobotPartRequest,
     DeleteRobotPartSecretRequest,
     DeleteRobotRequest,
+    GetAppBrandingRequest,
+    GetAppBrandingResponse,
     GetFragmentHistoryRequest,
     GetFragmentHistoryResponse,
     GetFragmentRequest,
@@ -111,7 +113,6 @@ from viam.proto.app import (
     Location,
     LocationAuth,
     LocationAuthRequest,
-    LocationAuthResponse,
     MarkPartAsMainRequest,
     MarkPartForRestartRequest,
     Model,
@@ -1377,7 +1378,7 @@ class AppClient:
                     time = log.time
                     level = log.level.upper()
                     logger_name = log.logger_name.split(".")[0]
-                    file_name = log.caller["File"] + ":" + str(int(log.caller["Line"]))
+                    file_name = log.caller["File"]+":"+str(int(log.caller["Line"]))
                     message = log.message
                     file.write(f"{time}\t{level}\t{logger_name}\t{file_name:<64}{message}\n")
                     file.flush()
@@ -1774,7 +1775,7 @@ class AppClient:
             # Get a fragment and print its name and when it was created.
             the_fragment = await cloud.get_fragment(
                 fragment_id="12a12ab1-1234-5678-abcd-abcd01234567")
-            print("Name: ", the_fragment.name, "\\nCreated on: ", the_fragment.created_on)
+            print("Name: ", the_fragment.name, "\nCreated on: ", the_fragment.created_on)
 
         Args:
             fragment_id (str): ID of the fragment to get.
@@ -2692,3 +2693,36 @@ class AppClient:
         """
         request = UpdateRobotPartMetadataRequest(id=robot_part_id, data=dict_to_struct(metadata))
         _: UpdateRobotPartMetadataResponse = await self._app_client.UpdateRobotPartMetadata(request)
+
+    async def get_app_branding(self) -> AppBranding:
+        """Get app branding information.
+
+        ::
+
+            branding = await cloud.get_app_branding()
+            print(branding.fragment_ids)
+
+        Returns:
+            AppBranding: The app branding information.
+
+        For more information, see `Fleet Management API <https://docs.viam.com/dev/reference/apis/fleet/#getappbranding>`_.
+        """
+        request = GetAppBrandingRequest()
+        response: GetAppBrandingResponse = await self._app_client.GetAppBranding(request, metadata=self._metadata)
+        return AppBranding.from_proto(response)
+
+
+class AppBranding:
+    """A class that mirrors the `GetAppBrandingResponse` proto message."""
+
+    @classmethod
+    def from_proto(cls, response: GetAppBrandingResponse) -> Self:
+        self = cls()
+        self.fragment_ids = response.fragment_ids
+        return self
+
+    fragment_ids: List[str]
+
+    @property
+    def proto(self) -> GetAppBrandingResponse:
+        return GetAppBrandingResponse(fragment_ids=self.fragment_ids)
