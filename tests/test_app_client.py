@@ -12,6 +12,7 @@ from viam.proto.app import (
     AuthorizationDetails,
     AuthorizedPermissions,
     FragmentHistoryEntry,
+    GetAppBrandingResponse,
     Location,
     LocationAuth,
     Model,
@@ -143,7 +144,9 @@ API_KEY_AUTHORIZATIONS = [API_KEY_AUTHORIZATION]
 AUTHORIZATION = Authorization(
     authorization_type=TYPE, authorization_id=ID, resource_type=TYPE, resource_id=ID, identity_id=ID, organization_id=ID
 )
-AUTHORIZATION_DETAIL = AuthorizationDetails(authorization_type=TYPE, authorization_id=ID, resource_type=TYPE, resource_id=ID, org_id=ID)
+AUTHORIZATION_DETAIL = AuthorizationDetails(
+    authorization_type=TYPE, authorization_id=ID, resource_type=TYPE, resource_id=ID, org_id=ID
+)
 AUTHORIZATION_DETAILS = [AUTHORIZATION_DETAIL]
 AUTHORIZATIONS = [AUTHORIZATION]
 API_KEY_WITH_AUTHORIZATIONS = APIKeyWithAuthorizations(
@@ -208,6 +211,7 @@ PLATFORM = "platform"
 MODULE_FILE_INFO = ModuleFileInfo(module_id=ID, version=VERSION, platform=PLATFORM)
 FILE = b"file"
 USER_DEFINED_METADATA = {"number": 0, "string": "string"}
+GET_APP_BRANDING_RESPONSE = GetAppBrandingResponse(logo_path=URL, fragment_ids=[ID])
 
 
 @pytest.fixture(scope="function")
@@ -235,6 +239,7 @@ def service() -> MockApp:
         api_keys_with_authorizations=API_KEYS_WITH_AUTHORIZATIONS,
         items=[ITEM],
         package_type=PACKAGE_TYPE,
+        get_app_branding_response=GET_APP_BRANDING_RESPONSE,
     )
 
 
@@ -827,3 +832,12 @@ class TestClient:
             await client.update_robot_part_metadata(ID, USER_DEFINED_METADATA)
             user_defined_metadata = await client.get_robot_part_metadata(ID)
             assert user_defined_metadata == USER_DEFINED_METADATA
+
+    async def test_get_app_branding(self, service: MockApp):
+        async with ChannelFor([service]) as channel:
+            client = AppClient(channel, METADATA, ID)
+            response = await client.get_app_branding(public_namespace=PUBLIC_NAMESPACE, name=NAME)
+            assert response.logo_path == URL
+            assert list(response.fragment_ids) == [ID]
+            assert service.public_namespace == PUBLIC_NAMESPACE
+            assert service.name == NAME

@@ -48,6 +48,8 @@ from viam.proto.app import (
     DeleteRobotPartRequest,
     DeleteRobotPartSecretRequest,
     DeleteRobotRequest,
+    GetAppBrandingRequest,
+    GetAppBrandingResponse,
     GetFragmentHistoryRequest,
     GetFragmentHistoryResponse,
     GetFragmentRequest,
@@ -424,7 +426,7 @@ class FragmentHistoryEntry:
         self = cls()
         self.fragment = fragment_history_entry.fragment
         self.edited_on = fragment_history_entry.edited_on.ToDatetime()
-        self.old = Fragment.from_proto(fragment_history_entry.old)
+        self.old = Fragment.from_proto(fragment_history_entry.old) if fragment_history_entry.HasField("old") else None
         self.edited_by = fragment_history_entry.edited_by
         return self
 
@@ -939,7 +941,7 @@ class AppClient:
         Args:
             org_id (str): The ID of the organization that the invite to delete was for.
                 You can obtain your organization ID from the organization settings page.
-            email (str): The email address the pending invite was sent to.
+            email (str): The email address associated with the invite.
 
         Raises:
             GRPCError: If no pending invite is associated with the provided email address.
@@ -1387,14 +1389,21 @@ class AppClient:
         return logs
 
     async def _get_robot_part_logs(
-        self, robot_part_id: str, filter: str, page_token: str, log_levels: List[str]
+        self,
+        robot_part_id: str,
+        filter: str,
+        page_token: str,
+        log_levels: List[str],
     ) -> Tuple[List[LogEntry], str]:
         request = GetRobotPartLogsRequest(id=robot_part_id, filter=filter, page_token=page_token, levels=log_levels)
         response: GetRobotPartLogsResponse = await self._app_client.GetRobotPartLogs(request, metadata=self._metadata)
         return [LogEntry.from_proto(log) for log in response.logs], response.next_page_token
 
     async def tail_robot_part_logs(
-        self, robot_part_id: str, errors_only: bool = True, filter: Optional[str] = None
+        self,
+        robot_part_id: str,
+        errors_only: bool = True,
+        filter: Optional[str] = None,
     ) -> _LogsStream[List[LogEntry]]:
         """Get an asynchronous iterator that receives live machine part logs.
 
@@ -1411,7 +1420,7 @@ class AppClient:
                 no filter).
 
         Returns:
-            _LogsStream[List[LogEntry]]: The asynchronous iterator receiving live machine part logs.
+            _LogsStream[List[LogEntry]]: The asynchronous iterator receiving machine part logs.
         """
 
         async def read() -> AsyncIterator[List[LogEntry]]:
@@ -1454,7 +1463,11 @@ class AppClient:
         return [RobotPartHistoryEntry.from_proto(part_history) for part_history in response.history]
 
     async def update_robot_part(
-        self, robot_part_id: str, name: str, robot_config: Optional[Mapping[str, Any]] = None, last_known_update: Optional[datetime] = None
+        self,
+        robot_part_id: str,
+        name: str,
+        robot_config: Optional[Mapping[str, Any]] = None,
+        last_known_update: Optional[datetime] = None,
     ) -> RobotPart:
         """Change the name and assign an optional new configuration to a machine part.
 
@@ -1734,7 +1747,10 @@ class AppClient:
         await self._app_client.DeleteRobot(request, metadata=self._metadata)
 
     async def list_fragments(
-        self, org_id: str, show_public: bool = True, visibilities: Optional[List[Fragment.Visibility]] = None
+        self,
+        org_id: str,
+        show_public: bool = True,
+        visibilities: Optional[List[Fragment.Visibility]] = None,
     ) -> List[Fragment]:
         """Get a list of fragments under the currently authed-to organization.
 
@@ -1774,7 +1790,7 @@ class AppClient:
             # Get a fragment and print its name and when it was created.
             the_fragment = await cloud.get_fragment(
                 fragment_id="12a12ab1-1234-5678-abcd-abcd01234567")
-            print("Name: ", the_fragment.name, "\\nCreated on: ", the_fragment.created_on)
+            print("Name: ", the_fragment.name, "\nCreated on: ", the_fragment.created_on)
 
         Args:
             fragment_id (str): ID of the fragment to get.
@@ -1889,7 +1905,10 @@ class AppClient:
         await self._app_client.DeleteFragment(request, metadata=self._metadata)
 
     async def get_fragment_history(
-        self, id: str, page_token: Optional[str] = "", page_limit: Optional[int] = 10
+        self,
+        id: str,
+        page_token: Optional[str] = "",
+        page_limit: Optional[int] = 10,
     ) -> List[FragmentHistoryEntry]:
         """Get fragment history.
 
@@ -2174,7 +2193,11 @@ class AppClient:
         await self._app_client.CreateRegistryItem(request, metadata=self._metadata)
 
     async def update_registry_item(
-        self, item_id: str, type: PackageType.ValueType, description: str, visibility: Visibility.ValueType
+        self,
+        item_id: str,
+        type: PackageType.ValueType,
+        description: str,
+        visibility: Visibility.ValueType,
     ) -> None:
         """Update a registry item.
 
@@ -2547,7 +2570,7 @@ class AppClient:
 
         ::
 
-            id, key = await cloud.rotate_key("key-id")
+            key, id = await cloud.rotate_key("key-id")
 
         Args:
             id (str): The ID of the key to be rotated.
@@ -2692,3 +2715,24 @@ class AppClient:
         """
         request = UpdateRobotPartMetadataRequest(id=robot_part_id, data=dict_to_struct(metadata))
         _: UpdateRobotPartMetadataResponse = await self._app_client.UpdateRobotPartMetadata(request)
+
+    async def get_app_branding(self, public_namespace: str, name: str) -> GetAppBrandingResponse:
+        """Get branding for an app.
+
+        ::
+
+            branding = await cloud.get_app_branding(public_namespace="my-namespace", name="my-app")
+
+        Args:
+            public_namespace (str): The public namespace of the organization that owns the app.
+            name (str): The name of the app.
+
+        Returns:
+            viam.proto.app.GetAppBrandingResponse: The app branding information.
+
+        For more information, see `Fleet Management API <https://docs.viam.com/dev/reference/apis/fleet/#getappbranding>`_.
+        """
+        request = GetAppBrandingRequest(public_namespace=public_namespace, name=name)
+        response: GetAppBrandingResponse = await self._app_client.GetAppBranding(request, metadata=self._metadata)
+        return response
+
