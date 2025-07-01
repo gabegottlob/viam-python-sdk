@@ -208,6 +208,7 @@ PLATFORM = "platform"
 MODULE_FILE_INFO = ModuleFileInfo(module_id=ID, version=VERSION, platform=PLATFORM)
 FILE = b"file"
 USER_DEFINED_METADATA = {"number": 0, "string": "string"}
+FRAGMENT_IDS = ["fragment_id_1", "fragment_id_2"]
 
 
 @pytest.fixture(scope="function")
@@ -235,6 +236,7 @@ def service() -> MockApp:
         api_keys_with_authorizations=API_KEYS_WITH_AUTHORIZATIONS,
         items=[ITEM],
         package_type=PACKAGE_TYPE,
+        fragment_ids=FRAGMENT_IDS,
     )
 
 
@@ -827,3 +829,11 @@ class TestClient:
             await client.update_robot_part_metadata(ID, USER_DEFINED_METADATA)
             user_defined_metadata = await client.get_robot_part_metadata(ID)
             assert user_defined_metadata == USER_DEFINED_METADATA
+
+    async def test_get_app_branding(self, service: MockApp):
+        async with ChannelFor([service]) as channel:
+            client = AppClient(channel, METADATA, ID)
+            logo_path, text_customizations, fragment_ids = await client.get_app_branding(public_namespace=NAMESPACE, name=NAME)
+            assert logo_path == service.logo_path
+            assert text_customizations == service.text_customizations
+            assert fragment_ids == FRAGMENT_IDS
