@@ -48,6 +48,8 @@ from viam.proto.app import (
     DeleteRobotPartRequest,
     DeleteRobotPartSecretRequest,
     DeleteRobotRequest,
+    GetAppBrandingRequest,
+    GetAppBrandingResponse,
     GetFragmentHistoryRequest,
     GetFragmentHistoryResponse,
     GetFragmentRequest,
@@ -139,6 +141,7 @@ from viam.proto.app import (
     ShareLocationRequest,
     TailRobotPartLogsRequest,
     TailRobotPartLogsResponse,
+    TextOverrides,
     UnshareLocationRequest,
     UpdateFragmentRequest,
     UpdateFragmentResponse,
@@ -478,6 +481,41 @@ class RobotPartHistoryEntry:
             robot=self.robot,
             when=datetime_to_timestamp(self.when) if self.when else None,
             old=self.old.proto if self.old else None,
+        )
+
+
+class AppBranding:
+    """A class that mirrors the `GetAppBrandingResponse` proto message.
+
+    Use this class to make the attributes of a `viam.proto.app.GetAppBrandingResponse` more accessible and easier to read/interpret.
+    """
+
+    @classmethod
+    def from_proto(cls, app_branding: GetAppBrandingResponse) -> Self:
+        """Create an `AppBranding` from the .proto defined `GetAppBrandingResponse`.
+
+        Args:
+            app_branding (viam.proto.app.GetAppBrandingResponse): The object to copy from.
+
+        Returns:
+            AppBranding: The `AppBranding`.
+        """
+        self = cls()
+        self.logo_path = app_branding.logo_path if app_branding.HasField("logo_path") else None
+        self.text_customizations = dict(app_branding.text_customizations)
+        self.fragment_ids = list(app_branding.fragment_ids)
+        return self
+
+    logo_path: Optional[str]
+    text_customizations: Mapping[str, TextOverrides]
+    fragment_ids: List[str]
+
+    @property
+    def proto(self) -> GetAppBrandingResponse:
+        return GetAppBrandingResponse(
+            logo_path=self.logo_path,
+            text_customizations=self.text_customizations,
+            fragment_ids=self.fragment_ids,
         )
 
 
@@ -1774,7 +1812,7 @@ class AppClient:
             # Get a fragment and print its name and when it was created.
             the_fragment = await cloud.get_fragment(
                 fragment_id="12a12ab1-1234-5678-abcd-abcd01234567")
-            print("Name: ", the_fragment.name, "\\nCreated on: ", the_fragment.created_on)
+            print("Name: ", the_fragment.name, "\nCreated on: ", the_fragment.created_on)
 
         Args:
             fragment_id (str): ID of the fragment to get.
@@ -2560,6 +2598,23 @@ class AppClient:
         request = RotateKeyRequest(id=id)
         response: RotateKeyResponse = await self._app_client.RotateKey(request, metadata=self._metadata)
         return response.key, response.id
+
+    async def get_app_branding(self) -> AppBranding:
+        """Get the app branding details.
+
+        ::
+
+            branding = await cloud.get_app_branding()
+            print(branding.logo_path)
+
+        Returns:
+            AppBranding: The app branding details.
+
+        For more information, see `Fleet Management API <https://docs.viam.com/dev/reference/apis/fleet/#getappbranding>`_.
+        """
+        request = GetAppBrandingRequest()
+        response: GetAppBrandingResponse = await self._app_client.GetAppBranding(request, metadata=self._metadata)
+        return AppBranding.from_proto(response)
 
     async def get_organization_metadata(self, org_id: str) -> Mapping[str, Any]:
         """Get an organization's user-defined metadata.

@@ -3,7 +3,7 @@ from datetime import datetime
 import pytest
 from grpclib.testing import ChannelFor
 
-from viam.app.app_client import APIKeyAuthorization, AppClient, Fragment, FragmentVisibilityPB
+from viam.app.app_client import APIKeyAuthorization, AppClient, Fragment, FragmentVisibilityPB, AppBranding
 from viam.proto.app import (
     APIKey,
     APIKeyWithAuthorizations,
@@ -12,6 +12,7 @@ from viam.proto.app import (
     AuthorizationDetails,
     AuthorizedPermissions,
     FragmentHistoryEntry,
+    GetAppBrandingResponse,
     Location,
     LocationAuth,
     Model,
@@ -27,6 +28,7 @@ from viam.proto.app import (
     RobotPart,
     RobotPartHistoryEntry,
     RoverRentalRobot,
+    TextOverrides,
     Visibility,
 )
 from viam.proto.app import Fragment as FragmentPB
@@ -209,6 +211,18 @@ MODULE_FILE_INFO = ModuleFileInfo(module_id=ID, version=VERSION, platform=PLATFO
 FILE = b"file"
 USER_DEFINED_METADATA = {"number": 0, "string": "string"}
 
+TEXT_OVERRIDES_PB = TextOverrides(text_override="some_override_text")
+TEXT_CUSTOMIZATIONS_MAP = {"header": TEXT_OVERRIDES_PB}
+FRAGMENT_IDS_LIST = ["fragment_id_1", "fragment_id_2"]
+LOGO_PATH_STR = "https://example.com/logo.png"
+
+APP_BRANDING_RESPONSE_PB = GetAppBrandingResponse(
+    logo_path=LOGO_PATH_STR,
+    text_customizations=TEXT_CUSTOMIZATIONS_MAP,
+    fragment_ids=FRAGMENT_IDS_LIST,
+)
+APP_BRANDING_OBJ = AppBranding.from_proto(APP_BRANDING_RESPONSE_PB)
+
 
 @pytest.fixture(scope="function")
 def service() -> MockApp:
@@ -235,6 +249,7 @@ def service() -> MockApp:
         api_keys_with_authorizations=API_KEYS_WITH_AUTHORIZATIONS,
         items=[ITEM],
         package_type=PACKAGE_TYPE,
+        app_branding=APP_BRANDING_RESPONSE_PB,
     )
 
 
@@ -787,6 +802,16 @@ class TestClient:
             key, id = await client.rotate_key(ID)
             assert key == API_KEY
             assert id == ID
+
+    async def test_get_app_branding(self, service: MockApp):
+        async with ChannelFor([service]) as channel:
+            client = AppClient(channel, METADATA, ID)
+            branding = await client.get_app_branding()
+            assert service.get_app_branding_called is True
+            assert branding.logo_path == LOGO_PATH_STR
+            assert branding.text_customizations == TEXT_CUSTOMIZATIONS_MAP
+            assert branding.fragment_ids == FRAGMENT_IDS_LIST
+            assert branding.proto == APP_BRANDING_RESPONSE_PB
 
     async def test_get_and_update_organization_metadata(self, service: MockApp):
         async with ChannelFor([service]) as channel:
