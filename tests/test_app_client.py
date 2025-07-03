@@ -14,6 +14,10 @@ from viam.proto.app import (
     FragmentHistoryEntry,
     Location,
     LocationAuth,
+    ListRobotsForLocationsRequest,
+    ListRobotsForLocationsResponse,
+    ListRobotsForOrgRequest,
+    ListRobotsForOrgResponse,
     Model,
     Module,
     ModuleFileInfo,
@@ -539,6 +543,22 @@ class TestClient:
             client = AppClient(channel, METADATA, ID)
             robots = await client.list_robots(location_id=ID)
             assert service.location_id == ID
+            assert robots == [ROBOT]
+
+    async def test_list_robots_for_locations(self, service: MockApp):
+        async with ChannelFor([service]) as channel:
+            client = AppClient(channel, METADATA, ID)
+            robots = await client.list_robots_for_locations(location_ids=IDS)
+            assert service.list_robots_for_locations_called is True
+            assert service.location_ids == IDS
+            assert robots == [ROBOT]
+
+    async def test_list_robots_for_org(self, service: MockApp):
+        async with ChannelFor([service]) as channel:
+            client = AppClient(channel, METADATA, ID)
+            robots = await client.list_robots_for_org(org_id=ID)
+            assert service.list_robots_for_org_called is True
+            assert service.org_id == ID
             assert robots == [ROBOT]
 
     async def test_new_robot(self, service: MockApp):
