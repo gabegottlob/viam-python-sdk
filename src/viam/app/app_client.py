@@ -106,6 +106,10 @@ from viam.proto.app import (
     ListOrganizationsResponse,
     ListRegistryItemsRequest,
     ListRegistryItemsResponse,
+    ListRobotsForLocationsRequest,
+    ListRobotsForLocationsResponse,
+    ListRobotsForOrgRequest,
+    ListRobotsForOrgResponse,
     ListRobotsRequest,
     ListRobotsResponse,
     Location,
@@ -1659,6 +1663,50 @@ class AppClient:
         response: ListRobotsResponse = await self._app_client.ListRobots(request, metadata=self._metadata)
         return list(response.robots)
 
+    async def list_robots_for_locations(self, location_ids: List[str]) -> List[Robot]:
+        """Get a list of all machines under the specified locations.
+
+        ::
+
+            list_of_machines = await cloud.list_robots_for_locations(location_ids=["123ab12345", "678cd67890"])
+
+        Args:
+            location_ids (List[str]): IDs of the locations to retrieve the machines from.
+
+        Raises:
+            GRPCError: If an invalid location ID is passed.
+
+        Returns:
+            List[viam.proto.app.Robot]: The list of robots.
+
+        For more information, see `Fleet Management API <https://docs.viam.com/dev/reference/apis/fleet/#listrobotsforlocations>`_.
+        """
+        request = ListRobotsForLocationsRequest(location_ids=location_ids)
+        response: ListRobotsForLocationsResponse = await self._app_client.ListRobotsForLocations(request, metadata=self._metadata)
+        return list(response.robots)
+
+    async def list_robots_for_org(self, org_id: str) -> List[Robot]:
+        """Get a list of all machines under the specified organization.
+
+        ::
+
+            list_of_machines = await cloud.list_robots_for_org(org_id="<YOUR-ORG-ID>")
+
+        Args:
+            org_id (str): ID of the organization to retrieve the machines from.
+
+        Raises:
+            GRPCError: If an invalid organization ID is passed.
+
+        Returns:
+            List[viam.proto.app.Robot]: The list of robots.
+
+        For more information, see `Fleet Management API <https://docs.viam.com/dev/reference/apis/fleet/#listrobotsfororg>`_.
+        """
+        request = ListRobotsForOrgRequest(org_id=org_id)
+        response: ListRobotsForOrgResponse = await self._app_client.ListRobotsForOrg(request, metadata=self._metadata)
+        return list(response.robots)
+
     async def new_robot(self, name: str, location_id: Optional[str] = None) -> str:
         """Create a new machine.
 
@@ -1774,7 +1822,7 @@ class AppClient:
             # Get a fragment and print its name and when it was created.
             the_fragment = await cloud.get_fragment(
                 fragment_id="12a12ab1-1234-5678-abcd-abcd01234567")
-            print("Name: ", the_fragment.name, "\\nCreated on: ", the_fragment.created_on)
+            print("Name: ", the_fragment.name, "\nCreated on: ", the_fragment.created_on)
 
         Args:
             fragment_id (str): ID of the fragment to get.
