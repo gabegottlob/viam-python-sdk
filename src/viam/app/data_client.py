@@ -455,7 +455,9 @@ class DataClient:
         if dest:
             try:
                 file = open(dest, "w")
-                file.write(f"{[str(d) for d in data]}")
+                file.write(f"{[
+                    str(d) for d in data
+                ]}")
                 file.flush()
             except Exception as e:
                 LOGGER.error(f"Failed to write tabular data to file {dest}", exc_info=e)
@@ -490,7 +492,7 @@ class DataClient:
     async def tabular_data_by_mql(
         self,
         organization_id: str,
-        query: Union[List[bytes], List[Dict[str, Any]]],
+        query: Union[List[bytes], List[Dict[str, Any]], ],
         use_recent_data: Optional[bool] = None,
         tabular_data_source_type: TabularDataSourceType.ValueType = TabularDataSourceType.TABULAR_DATA_SOURCE_TYPE_STANDARD,
         pipeline_id: Optional[str] = None,
@@ -760,7 +762,7 @@ class DataClient:
         if dest:
             try:
                 file = open(dest, "w")
-                file.write(f"{[str(d) for d in data]}")
+                file.write(f"{response.data}")
                 file.flush()
             except Exception as e:
                 LOGGER.error(f"Failed to write binary data to file {dest}", exc_info=e)
@@ -1484,6 +1486,7 @@ class DataClient:
         file_extension: str,
         method_parameters: Optional[Mapping[str, Any]] = None,
         tags: Optional[List[str]] = None,
+        dataset_ids: Optional[List[str]] = None,
         data_request_times: Optional[Tuple[datetime, datetime]] = None,
     ) -> str:
         """Upload binary sensor data.
@@ -1503,6 +1506,7 @@ class DataClient:
                 method_name='GetImages',
                 method_parameters=None,
                 tags=["tag_1", "tag_2"],
+                dataset_ids=["dataset_id_1", "dataset_id_2"],
                 data_request_times=[time_requested, time_received],
                 file_extension=".jpg",
                 binary_data=b"Encoded image bytes"
@@ -1519,6 +1523,7 @@ class DataClient:
                 or ``.png`` extension will appear in the **Images** tab.
             method_parameters (Optional[Mapping[str, Any]]): Optional dictionary of method parameters. No longer in active use.
             tags (Optional[List[str]]): Optional list of tags to allow for tag-based data filtering when retrieving data.
+            dataset_ids (Optional[List[str]]): Optional list of dataset IDs to associate with the data.
             data_request_times (Optional[Tuple[datetime.datetime, datetime.datetime]]): Optional tuple containing datetime objects
                 denoting the times this data was requested ``[0]`` by the robot and received ``[1]`` from the appropriate sensor.
 
@@ -1550,6 +1555,7 @@ class DataClient:
             type=DataType.DATA_TYPE_BINARY_SENSOR,
             method_parameters=method_parameters,
             tags=tags,
+            dataset_ids=dataset_ids,
         )
         if file_extension:
             metadata.file_extension = file_extension if file_extension[0] == "." else f".{file_extension}"
@@ -1566,6 +1572,7 @@ class DataClient:
         data_request_times: List[Tuple[datetime, datetime]],
         method_parameters: Optional[Mapping[str, Any]] = None,
         tags: Optional[List[str]] = None,
+        dataset_ids: Optional[List[str]] = None,
     ) -> str:
         """Upload tabular sensor data.
 
@@ -1584,13 +1591,16 @@ class DataClient:
                 component_name='my_movement_sensor',
                 method_name='Readings',
                 tags=["sensor_data"],
+                dataset_ids=["dataset_id_1", "dataset_id_2"],
                 data_request_times=[(time_requested, time_received)],
-                tabular_data=[{
-                    'readings': {
-                        'linear_velocity': {'x': 0.5, 'y': 0.0, 'z': 0.0},
-                        'angular_velocity': {'x': 0.0, 'y': 0.0, 'z': 0.1}
+                tabular_data=[
+                    {
+                        'readings': {
+                            'linear_velocity': {'x': 0.5, 'y': 0.0, 'z': 0.0},
+                            'angular_velocity': {'x': 0.0, 'y': 0.0, 'z': 0.1}
+                        }
                     }
-                }]
+                ]
             )
 
         Args:
@@ -1605,6 +1615,7 @@ class DataClient:
                 Pass a list of tabular data and timestamps with length ``n > 1`` to upload ``n`` datapoints, all with the same metadata.
             method_parameters (Optional[Mapping[str, Any]]): Optional dictionary of method parameters. No longer in active use.
             tags (Optional[List[str]]): Optional list of tags to allow for tag-based data filtering when retrieving data.
+            dataset_ids (Optional[List[str]]): Optional list of dataset IDs to associate with the data.
 
         Raises:
             GRPCError: If an invalid part ID is passed.
@@ -1647,6 +1658,7 @@ class DataClient:
             type=DataType.DATA_TYPE_TABULAR_SENSOR,
             method_parameters=method_parameters,
             tags=tags,
+            dataset_ids=dataset_ids,
         )
         response = await self._data_capture_upload(metadata=metadata, sensor_contents=sensor_contents)
         return response.file_id
@@ -1667,6 +1679,7 @@ class DataClient:
         method_parameters: Optional[Mapping[str, Any]] = None,
         data_request_times: Optional[Tuple[datetime, datetime]] = None,
         tags: Optional[List[str]] = None,
+        dataset_ids: Optional[List[str]] = None,
     ) -> str:
         """Uploads the metadata and contents of streaming binary data.
 
@@ -1683,7 +1696,8 @@ class DataClient:
                 component_name='left_motor',
                 method_name='IsPowered',
                 data_request_times=[time_requested, time_received],
-                tags=["tag_1", "tag_2"]
+                tags=["tag_1", "tag_2"],
+                dataset_ids=["dataset_id_1", "dataset_id_2"]
             )
 
         Args:
@@ -1697,6 +1711,7 @@ class DataClient:
             data_request_times (Optional[Tuple[datetime.datetime, datetime.datetime]]): Optional tuple containing datetime objects
                 denoting the times this data was requested ``[0]`` by the robot and received ``[1]`` from the appropriate sensor.
             tags (Optional[List[str]]): Optional list of tags to allow for tag-based filtering when retrieving data.
+            dataset_ids (Optional[List[str]]): Optional list of dataset IDs to associate with the data.
 
         Raises:
             GRPCError: If an invalid part ID is passed.
@@ -1716,6 +1731,7 @@ class DataClient:
             type=DataType.DATA_TYPE_BINARY_SENSOR,
             file_extension=file_ext if file_ext[0] == "." else f".{file_ext}",
             tags=tags,
+            dataset_ids=dataset_ids,
         )
         sensor_metadata = SensorMetadata(
             time_requested=datetime_to_timestamp(data_request_times[0]) if data_request_times else None,
@@ -1744,6 +1760,7 @@ class DataClient:
         method_parameters: Optional[Mapping[str, Any]] = None,
         file_extension: Optional[str] = None,
         tags: Optional[List[str]] = None,
+        dataset_ids: Optional[List[str]] = None,
     ) -> str:
         """Upload arbitrary file data.
 
@@ -1756,6 +1773,7 @@ class DataClient:
                 data=b"Encoded image bytes",
                 part_id="INSERT YOUR PART ID",
                 tags=["tag_1", "tag_2"],
+                dataset_ids=["dataset_id_1", "dataset_id_2"],
                 file_name="your-file",
                 file_extension=".txt"
             )
@@ -1772,6 +1790,7 @@ class DataClient:
             file_extension (Optional[str]): Optional file extension. The empty string ``""`` will be assigned as the file extension if one
                 isn't provided. Files with a ``.jpeg``, ``.jpg``, or ``.png`` extension will be saved to the **Images** tab.
             tags (Optional[List[str]]): Optional list of tags to allow for tag-based filtering when retrieving data.
+            dataset_ids (Optional[List[str]]): Optional list of dataset IDs to associate with the data.
 
         Raises:
             GRPCError: If an invalid part ID is passed.
@@ -1791,6 +1810,7 @@ class DataClient:
             method_parameters=method_parameters,
             file_extension=file_extension if file_extension else "",
             tags=tags,
+            dataset_ids=dataset_ids,
         )
         response: FileUploadResponse = await self._file_upload(metadata=metadata, file_contents=FileData(data=data))
         return response.binary_data_id
@@ -1804,6 +1824,7 @@ class DataClient:
         method_name: Optional[str] = None,
         method_parameters: Optional[Mapping[str, Any]] = None,
         tags: Optional[List[str]] = None,
+        dataset_ids: Optional[List[str]] = None,
     ) -> str:
         """Upload arbitrary file data.
 
@@ -1815,6 +1836,7 @@ class DataClient:
             file_id = await data_client.file_upload_from_path(
                 part_id="INSERT YOUR PART ID",
                 tags=["tag_1", "tag_2"],
+                dataset_ids=["dataset_id_1", "dataset_id_2"],
                 filepath="/Users/<your-username>/<your-directory>/<your-file.txt>"
             )
 
@@ -1826,6 +1848,7 @@ class DataClient:
             method_name (Optional[str]): Optional name of the method associated with the file.
             method_parameters (Optional[str]): Optional dictionary of the method parameters. No longer in active use.
             tags (Optional[List[str]]): Optional list of tags to allow for tag-based filtering when retrieving data.
+            dataset_ids (Optional[List[str]]): Optional list of dataset IDs to associate with the data.
 
 
         Raises:
@@ -1854,6 +1877,7 @@ class DataClient:
             method_parameters=method_parameters,
             file_extension=file_extension if file_extension else "",
             tags=tags,
+            dataset_ids=dataset_ids,
         )
         response: FileUploadResponse = await self._file_upload(metadata=metadata, file_contents=FileData(data=data if data else bytes()))
         return response.binary_data_id

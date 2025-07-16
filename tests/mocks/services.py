@@ -1114,12 +1114,14 @@ class MockDataSync(DataSyncServiceBase):
         assert request is not None
         self.metadata = request.metadata
         self.sensor_contents = request.sensor_contents
+        self.metadata.dataset_ids = request.metadata.dataset_ids
         await stream.send_message(DataCaptureUploadResponse(binary_data_id=self.file_upload_response, file_id=self.file_upload_response))
 
     async def FileUpload(self, stream: Stream[FileUploadRequest, FileUploadResponse]) -> None:
         request_metadata = await stream.recv_message()
         assert request_metadata is not None
         self.metadata = request_metadata.metadata
+        self.metadata.dataset_ids = request_metadata.metadata.dataset_ids
         request_file_contents = await stream.recv_message()
         assert request_file_contents is not None
         self.binary_data = request_file_contents.file_contents.data
@@ -1131,6 +1133,7 @@ class MockDataSync(DataSyncServiceBase):
         request_metadata = await stream.recv_message()
         assert request_metadata is not None
         self.metadata = request_metadata.metadata.upload_metadata
+        self.metadata.dataset_ids = request_metadata.metadata.upload_metadata.dataset_ids
         request_data_contents = await stream.recv_message()
         assert request_data_contents is not None
         self.binary_data = request_data_contents.data
