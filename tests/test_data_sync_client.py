@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, List, Mapping, Tuple, cast
+from typing import Any, List, Mapping, Optional, Tuple, cast
 
 import pytest
 from google.protobuf.timestamp_pb2 import Timestamp
@@ -19,6 +19,7 @@ NANOS_START = 10
 SECONDS_END = 1689256810
 NANOS_END = 10
 TAGS = ["tag"]
+DATASET_IDS = ["dataset_id_1", "dataset_id_2"]
 BINARY_DATA = b"binary_data"
 METHOD_NAME = "method_name"
 DATETIMES = (datetime.now(), datetime.now())
@@ -52,9 +53,10 @@ class TestClient:
                 data_request_times=DATETIMES,
                 binary_data=BINARY_DATA,
                 file_extension=".txt",
+                dataset_ids=DATASET_IDS,
             )
             self.assert_sensor_contents(sensor_contents=list(service.sensor_contents), is_binary=True)
-            self.assert_metadata(metadata=service.metadata)
+            self.assert_metadata(metadata=service.metadata, dataset_ids=DATASET_IDS)
             assert service.metadata.file_extension == ".txt"
             assert file_id == FILE_UPLOAD_RESPONSE
 
@@ -69,6 +71,7 @@ class TestClient:
                 data_request_times=DATETIMES,
                 binary_data=BINARY_DATA,
                 file_extension="txt",
+                dataset_ids=DATASET_IDS,
             )
             assert service.metadata.file_extension == ".txt"
 
@@ -84,9 +87,10 @@ class TestClient:
                 tags=TAGS,
                 data_request_times=[DATETIMES],
                 tabular_data=cast(List[Mapping[str, Any]], TABULAR_DATA),
+                dataset_ids=DATASET_IDS,
             )
             self.assert_sensor_contents(sensor_contents=list(service.sensor_contents), is_binary=False)
-            self.assert_metadata(metadata=service.metadata)
+            self.assert_metadata(metadata=service.metadata, dataset_ids=DATASET_IDS)
             assert file_id == FILE_UPLOAD_RESPONSE
 
     async def test_file_upload(self, service: MockDataSync):
@@ -102,9 +106,10 @@ class TestClient:
                 file_extension=FILE_EXT,
                 tags=TAGS,
                 data=BINARY_DATA,
+                dataset_ids=DATASET_IDS,
             )
             assert file_id == FILE_UPLOAD_RESPONSE
-            self.assert_metadata(service.metadata)
+            self.assert_metadata(service.metadata, dataset_ids=DATASET_IDS)
             assert service.metadata.file_name == FILE_NAME
             assert service.metadata.file_extension == FILE_EXT
             assert service.binary_data == BINARY_DATA
@@ -122,9 +127,10 @@ class TestClient:
                 method_parameters=METHOD_PARAMETERS,
                 tags=TAGS,
                 filepath=path.resolve(),
+                dataset_ids=DATASET_IDS,
             )
             assert file_id == FILE_UPLOAD_RESPONSE
-            self.assert_metadata(service.metadata)
+            self.assert_metadata(service.metadata, dataset_ids=DATASET_IDS)
             assert service.metadata.file_name == FILE_NAME
             assert service.metadata.file_extension == FILE_EXT
             assert service.binary_data == BINARY_DATA
@@ -142,9 +148,10 @@ class TestClient:
                 method_parameters=METHOD_PARAMETERS,
                 data_request_times=DATETIMES,
                 tags=TAGS,
+                dataset_ids=DATASET_IDS,
             )
             assert file_id == FILE_UPLOAD_RESPONSE
-            self.assert_metadata(service.metadata)
+            self.assert_metadata(service.metadata, dataset_ids=DATASET_IDS)
             assert service.metadata.file_extension == FILE_EXT
             assert service.binary_data == BINARY_DATA
 
@@ -159,10 +166,11 @@ class TestClient:
             else:
                 assert struct_to_dict(sensor_content.struct) == TABULAR_DATA[idx]
 
-    def assert_metadata(self, metadata: UploadMetadata) -> None:
+    def assert_metadata(self, metadata: UploadMetadata, dataset_ids: Optional[List[str]] = None) -> None:
         assert metadata.part_id == PART_ID
         assert metadata.component_type == COMPONENT_TYPE
         assert metadata.component_name == COMPONENT_NAME
         assert metadata.method_name == METHOD_NAME
         assert metadata.method_parameters == METHOD_PARAMETERS
         assert metadata.tags == TAGS
+        assert metadata.dataset_ids == (dataset_ids if dataset_ids else [])
