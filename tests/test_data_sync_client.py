@@ -29,6 +29,7 @@ FILE_NAME = "file_name"
 FILE_EXT = ".file_extension"
 FILE_UPLOAD_RESPONSE = "ID"
 
+DATASET_IDS = ["dataset_id_1", "dataset_id_2"]
 AUTH_TOKEN = "auth_token"
 DATA_SERVICE_METADATA = {"authorization": f"Bearer {AUTH_TOKEN}"}
 
@@ -52,9 +53,11 @@ class TestClient:
                 data_request_times=DATETIMES,
                 binary_data=BINARY_DATA,
                 file_extension=".txt",
+                dataset_ids=DATASET_IDS,
             )
             self.assert_sensor_contents(sensor_contents=list(service.sensor_contents), is_binary=True)
             self.assert_metadata(metadata=service.metadata)
+            assert service.metadata.dataset_ids == DATASET_IDS
             assert service.metadata.file_extension == ".txt"
             assert file_id == FILE_UPLOAD_RESPONSE
 
@@ -84,9 +87,11 @@ class TestClient:
                 tags=TAGS,
                 data_request_times=[DATETIMES],
                 tabular_data=cast(List[Mapping[str, Any]], TABULAR_DATA),
+                dataset_ids=DATASET_IDS,
             )
             self.assert_sensor_contents(sensor_contents=list(service.sensor_contents), is_binary=False)
             self.assert_metadata(metadata=service.metadata)
+            assert service.metadata.dataset_ids == DATASET_IDS
             assert file_id == FILE_UPLOAD_RESPONSE
 
     async def test_file_upload(self, service: MockDataSync):
@@ -102,9 +107,11 @@ class TestClient:
                 file_extension=FILE_EXT,
                 tags=TAGS,
                 data=BINARY_DATA,
+                dataset_ids=DATASET_IDS,
             )
             assert file_id == FILE_UPLOAD_RESPONSE
             self.assert_metadata(service.metadata)
+            assert service.metadata.dataset_ids == DATASET_IDS
             assert service.metadata.file_name == FILE_NAME
             assert service.metadata.file_extension == FILE_EXT
             assert service.binary_data == BINARY_DATA
@@ -122,9 +129,11 @@ class TestClient:
                 method_parameters=METHOD_PARAMETERS,
                 tags=TAGS,
                 filepath=path.resolve(),
+                dataset_ids=DATASET_IDS,
             )
             assert file_id == FILE_UPLOAD_RESPONSE
             self.assert_metadata(service.metadata)
+            assert service.metadata.dataset_ids == DATASET_IDS
             assert service.metadata.file_name == FILE_NAME
             assert service.metadata.file_extension == FILE_EXT
             assert service.binary_data == BINARY_DATA
@@ -142,9 +151,11 @@ class TestClient:
                 method_parameters=METHOD_PARAMETERS,
                 data_request_times=DATETIMES,
                 tags=TAGS,
+                dataset_ids=DATASET_IDS,
             )
             assert file_id == FILE_UPLOAD_RESPONSE
             self.assert_metadata(service.metadata)
+            assert service.metadata.dataset_ids == DATASET_IDS
             assert service.metadata.file_extension == FILE_EXT
             assert service.binary_data == BINARY_DATA
 
@@ -166,3 +177,4 @@ class TestClient:
         assert metadata.method_name == METHOD_NAME
         assert metadata.method_parameters == METHOD_PARAMETERS
         assert metadata.tags == TAGS
+        assert metadata.dataset_ids == DATASET_IDS
