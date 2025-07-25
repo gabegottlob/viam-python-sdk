@@ -19,6 +19,7 @@ NANOS_START = 10
 SECONDS_END = 1689256810
 NANOS_END = 10
 TAGS = ["tag"]
+DATASET_IDS = ["dataset_id_1", "dataset_id_2"]
 BINARY_DATA = b"binary_data"
 METHOD_NAME = "method_name"
 DATETIMES = (datetime.now(), datetime.now())
@@ -52,11 +53,13 @@ class TestClient:
                 data_request_times=DATETIMES,
                 binary_data=BINARY_DATA,
                 file_extension=".txt",
+                dataset_ids=DATASET_IDS,
             )
             self.assert_sensor_contents(sensor_contents=list(service.sensor_contents), is_binary=True)
             self.assert_metadata(metadata=service.metadata)
             assert service.metadata.file_extension == ".txt"
             assert file_id == FILE_UPLOAD_RESPONSE
+            assert service.metadata.dataset_ids == DATASET_IDS
 
             # Test extension dot prepend
             file_id = await client.binary_data_capture_upload(
@@ -84,10 +87,12 @@ class TestClient:
                 tags=TAGS,
                 data_request_times=[DATETIMES],
                 tabular_data=cast(List[Mapping[str, Any]], TABULAR_DATA),
+                dataset_ids=DATASET_IDS,
             )
             self.assert_sensor_contents(sensor_contents=list(service.sensor_contents), is_binary=False)
             self.assert_metadata(metadata=service.metadata)
             assert file_id == FILE_UPLOAD_RESPONSE
+            assert service.metadata.dataset_ids == DATASET_IDS
 
     async def test_file_upload(self, service: MockDataSync):
         async with ChannelFor([service]) as channel:
@@ -102,12 +107,14 @@ class TestClient:
                 file_extension=FILE_EXT,
                 tags=TAGS,
                 data=BINARY_DATA,
+                dataset_ids=DATASET_IDS,
             )
             assert file_id == FILE_UPLOAD_RESPONSE
             self.assert_metadata(service.metadata)
             assert service.metadata.file_name == FILE_NAME
             assert service.metadata.file_extension == FILE_EXT
             assert service.binary_data == BINARY_DATA
+            assert service.metadata.dataset_ids == DATASET_IDS
 
     async def test_file_upload_from_path(self, service: MockDataSync, tmp_path):
         async with ChannelFor([service]) as channel:
@@ -122,12 +129,14 @@ class TestClient:
                 method_parameters=METHOD_PARAMETERS,
                 tags=TAGS,
                 filepath=path.resolve(),
+                dataset_ids=DATASET_IDS,
             )
             assert file_id == FILE_UPLOAD_RESPONSE
             self.assert_metadata(service.metadata)
             assert service.metadata.file_name == FILE_NAME
             assert service.metadata.file_extension == FILE_EXT
             assert service.binary_data == BINARY_DATA
+            assert service.metadata.dataset_ids == DATASET_IDS
 
     async def test_streaming_data_capture_upload(self, service: MockDataSync):
         async with ChannelFor([service]) as channel:
@@ -142,11 +151,13 @@ class TestClient:
                 method_parameters=METHOD_PARAMETERS,
                 data_request_times=DATETIMES,
                 tags=TAGS,
+                dataset_ids=DATASET_IDS,
             )
             assert file_id == FILE_UPLOAD_RESPONSE
             self.assert_metadata(service.metadata)
             assert service.metadata.file_extension == FILE_EXT
             assert service.binary_data == BINARY_DATA
+            assert service.metadata.dataset_ids == DATASET_IDS
 
     def assert_sensor_contents(self, sensor_contents: List[SensorData], is_binary: bool):
         for idx, sensor_content in enumerate(sensor_contents):
@@ -166,3 +177,4 @@ class TestClient:
         assert metadata.method_name == METHOD_NAME
         assert metadata.method_parameters == METHOD_PARAMETERS
         assert metadata.tags == TAGS
+        assert metadata.dataset_ids == DATASET_IDS
