@@ -47,6 +47,7 @@ END_TS = Timestamp(seconds=SECONDS_END, nanos=NANOS_END)
 START_DATETIME = START_TS.ToDatetime()
 END_DATETIME = END_TS.ToDatetime()
 TAGS = ["tag"]
+DATASET_IDS = ["dataset_id_1", "dataset_id_2"]
 BBOX_LABEL = "bbox_label"
 BBOX_LABELS = [BBOX_LABEL]
 DATASET_ID = "VIAM_DATASET_1"
