@@ -49,6 +49,7 @@ END_DATETIME = END_TS.ToDatetime()
 TAGS = ["tag"]
 BBOX_LABEL = "bbox_label"
 BBOX_LABELS = [BBOX_LABEL]
+DATASET_IDS = ["dataset_id_1", "dataset_id_2"]
 DATASET_ID = "VIAM_DATASET_1"
 FILTER = create_filter(
     component_name=COMPONENT_NAME,
@@ -428,6 +429,74 @@ class TestClient:
             await client.remove_binary_data_from_dataset_by_ids(binary_ids=BINARY_DATA_IDS, dataset_id=DATASET_ID)
             assert service.removed_binary_data_ids == BINARY_DATA_IDS
             assert service.dataset_id == DATASET_ID
+
+    async def test_binary_data_capture_upload(self, service: MockData):
+        async with ChannelFor([service]) as channel:
+            client = DataClient(channel, DATA_SERVICE_METADATA)
+            file_id = await client.binary_data_capture_upload(
+                binary_data=BINARY_DATA,
+                organization_id=ORG_ID,
+                location_id=LOCATION_ID,
+                robot_name=ROBOT_NAME,
+                robot_id=ROBOT_ID,
+                part_name=PART_NAME,
+                part_id=PART_ID,
+                component_name=COMPONENT_NAME,
+                component_type=COMPONENT_TYPE,
+                method_name=METHOD,
+                tags=TAGS,
+                mime_type=MIME_TYPE,
+                additional_params=ADDITIONAL_PARAMS,
+                dataset_ids=DATASET_IDS,
+            )
+            assert file_id == FILE_UPLOAD_RESPONSE
+            assert service.metadata.dataset_ids == DATASET_IDS
+
+    async def test_tabular_data_capture_upload(self, service: MockData):
+        async with ChannelFor([service]) as channel:
+            client = DataClient(channel, DATA_SERVICE_METADATA)
+            file_id = await client.tabular_data_capture_upload(
+                data=TABULAR_DATA,
+                organization_id=ORG_ID,
+                location_id=LOCATION_ID,
+                robot_name=ROBOT_NAME,
+                robot_id=ROBOT_ID,
+                part_name=PART_NAME,
+                part_id=PART_ID,
+                component_name=COMPONENT_NAME,
+                component_type=COMPONENT_TYPE,
+                method_name=METHOD,
+                tags=TAGS,
+                mime_type=MIME_TYPE,
+                additional_params=ADDITIONAL_PARAMS,
+                dataset_ids=DATASET_IDS,
+            )
+            assert file_id == FILE_UPLOAD_RESPONSE
+            assert service.metadata.dataset_ids == DATASET_IDS
+
+    async def test_file_upload(self, service: MockData):
+        async with ChannelFor([service]) as channel:
+            client = DataClient(channel, DATA_SERVICE_METADATA)
+            file_id = await client.file_upload(
+                data=BINARY_DATA,
+                metadata=TABULAR_METADATA,
+                upload_parameters=ADDITIONAL_PARAMS,
+                dataset_ids=DATASET_IDS,
+            )
+            assert file_id == FILE_UPLOAD_RESPONSE
+            assert service.metadata.dataset_ids == DATASET_IDS
+
+    async def test_file_upload_from_path(self, service: MockData):
+        async with ChannelFor([service]) as channel:
+            client = DataClient(channel, DATA_SERVICE_METADATA)
+            file_id = await client.file_upload_from_path(
+                file_path="dummy_test_file.txt",
+                metadata=TABULAR_METADATA,
+                upload_parameters=ADDITIONAL_PARAMS,
+                dataset_ids=DATASET_IDS,
+            )
+            assert file_id == FILE_UPLOAD_RESPONSE
+            assert service.metadata.dataset_ids == DATASET_IDS
 
     def assert_filter(self, filter: Filter) -> None:
         assert filter.component_name == COMPONENT_NAME
