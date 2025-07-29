@@ -9,6 +9,7 @@ from viam.proto.app.billing import (
     GetOrgBillingInformationResponse,
     InvoiceSummary,
 )
+from viam.proto.app.v1.billing_pb2 import UsageCost, ResourceUsageCosts, ResourceUsageCostsBySource, UsageCostType, SourceType
 
 from .mocks.services import MockBilling
 
@@ -45,6 +46,20 @@ INVOICE = InvoiceSummary(
     paid_date=PAID_DATE_TS,
 )
 INVOICES = [INVOICE]
+NEW_USAGE_COST_TYPE = UsageCostType.USAGE_COST_TYPE_BINARY_DATA_CROSS_REGION_EGRESS
+NEW_USAGE_COST_AMOUNT = 50.0
+NEW_USAGE_COST = UsageCost(resource_type=NEW_USAGE_COST_TYPE, cost=NEW_USAGE_COST_AMOUNT)
+NEW_RESOURCE_USAGE_COSTS = ResourceUsageCosts(
+    usage_costs=[NEW_USAGE_COST],
+    discount=0.0,
+    total_with_discount=NEW_USAGE_COST_AMOUNT,
+    total_without_discount=NEW_USAGE_COST_AMOUNT,
+)
+NEW_RESOURCE_USAGE_COSTS_BY_SOURCE = ResourceUsageCostsBySource(
+    source_type=SourceType.SOURCE_TYPE_ORG,
+    resource_usage_costs=NEW_RESOURCE_USAGE_COSTS,
+    tier_name="standard",
+)
 CURR_MONTH_USAGE = GetCurrentMonthUsageResponse(
     start_date=START_TS,
     end_date=END_TS,
@@ -56,6 +71,7 @@ CURR_MONTH_USAGE = GetCurrentMonthUsageResponse(
     discount_amount=DISCOUNT_AMOUNT,
     total_usage_with_discount=TOTAL_USAGE_WITH_DISCOUNT,
     total_usage_without_discount=TOTAL_USAGE_WITHOUT_DISCOUNT,
+    resource_usage_costs_by_source=[NEW_RESOURCE_USAGE_COSTS_BY_SOURCE]
 )
 INVOICES_SUMMARY = GetInvoicesSummaryResponse(outstanding_balance=OUTSTANDING_BALANCE, invoices=INVOICES)
 ORG_BILLING_INFO = GetOrgBillingInformationResponse(
@@ -85,6 +101,7 @@ class TestClient:
             client = BillingClient(channel, BILLING_SERVICE_METADATA)
             curr_month_usage = await client.get_current_month_usage(org_id=org_id)
             assert curr_month_usage == CURR_MONTH_USAGE
+            assert curr_month_usage.resource_usage_costs_by_source[0].resource_usage_costs.usage_costs[0].resource_type == NEW_USAGE_COST_TYPE
             assert service.org_id == org_id
 
     async def test_get_invoice_pdf(self, service: MockBilling):

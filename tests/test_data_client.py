@@ -50,6 +50,7 @@ TAGS = ["tag"]
 BBOX_LABEL = "bbox_label"
 BBOX_LABELS = [BBOX_LABEL]
 DATASET_ID = "VIAM_DATASET_1"
+DATASET_IDS = ["dataset_id_1", "dataset_id_2"]
 FILTER = create_filter(
     component_name=COMPONENT_NAME,
     component_type=COMPONENT_TYPE,
