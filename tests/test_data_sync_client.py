@@ -19,6 +19,7 @@ NANOS_START = 10
 SECONDS_END = 1689256810
 NANOS_END = 10
 TAGS = ["tag"]
+DATASET_IDS = ["dataset_id_1", "dataset_id_2"]
 BINARY_DATA = b"binary_data"
 METHOD_NAME = "method_name"
 DATETIMES = (datetime.now(), datetime.now())
@@ -49,6 +50,7 @@ class TestClient:
                 method_name=METHOD_NAME,
                 method_parameters=METHOD_PARAMETERS,
                 tags=TAGS,
+                dataset_ids=DATASET_IDS,
                 data_request_times=DATETIMES,
                 binary_data=BINARY_DATA,
                 file_extension=".txt",
@@ -66,6 +68,7 @@ class TestClient:
                 method_name=METHOD_NAME,
                 method_parameters=METHOD_PARAMETERS,
                 tags=TAGS,
+                dataset_ids=DATASET_IDS,
                 data_request_times=DATETIMES,
                 binary_data=BINARY_DATA,
                 file_extension="txt",
@@ -82,6 +85,7 @@ class TestClient:
                 method_name=METHOD_NAME,
                 method_parameters=METHOD_PARAMETERS,
                 tags=TAGS,
+                dataset_ids=DATASET_IDS,
                 data_request_times=[DATETIMES],
                 tabular_data=cast(List[Mapping[str, Any]], TABULAR_DATA),
             )
@@ -101,6 +105,7 @@ class TestClient:
                 method_parameters=METHOD_PARAMETERS,
                 file_extension=FILE_EXT,
                 tags=TAGS,
+                dataset_ids=DATASET_IDS,
                 data=BINARY_DATA,
             )
             assert file_id == FILE_UPLOAD_RESPONSE
@@ -121,6 +126,7 @@ class TestClient:
                 method_name=METHOD_NAME,
                 method_parameters=METHOD_PARAMETERS,
                 tags=TAGS,
+                dataset_ids=DATASET_IDS,
                 filepath=path.resolve(),
             )
             assert file_id == FILE_UPLOAD_RESPONSE
@@ -142,6 +148,7 @@ class TestClient:
                 method_parameters=METHOD_PARAMETERS,
                 data_request_times=DATETIMES,
                 tags=TAGS,
+                dataset_ids=DATASET_IDS,
             )
             assert file_id == FILE_UPLOAD_RESPONSE
             self.assert_metadata(service.metadata)
@@ -166,3 +173,4 @@ class TestClient:
         assert metadata.method_name == METHOD_NAME
         assert metadata.method_parameters == METHOD_PARAMETERS
         assert metadata.tags == TAGS
+        assert metadata.dataset_ids == DATASET_IDS
