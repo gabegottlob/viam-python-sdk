@@ -516,6 +516,7 @@ class MockGantry(Gantry):
 class MockGenericComponent(GenericComponent):
     timeout: Optional[float] = None
     geometries = GEOMETRIES
+    kinematics = (KinematicsFileFormat.KINEMATICS_FILE_FORMAT_SVA, b"")
 
     async def get_geometries(self, *, extra: Optional[Dict[str, Any]] = None, timeout: Optional[float] = None) -> List[Geometry]:
         self.extra = extra
@@ -526,6 +527,13 @@ class MockGenericComponent(GenericComponent):
         self.timeout = timeout
         return {key: True for key in command.keys()}
 
+    async def get_kinematics(
+        self, *, extra: Optional[Dict[str, Any]] = None, timeout: Optional[float] = None
+    ) -> Tuple[KinematicsFileFormat.ValueType, bytes]:
+        self.extra = extra
+        self.timeout = timeout
+        return self.kinematics
+
 
 class MockGripper(Gripper):
     def __init__(self, name: str):
@@ -533,6 +541,7 @@ class MockGripper(Gripper):
         self.geometries = GEOMETRIES
         self.extra = None
         self.is_stopped = True
+        self.kinematics = (KinematicsFileFormat.KINEMATICS_FILE_FORMAT_SVA, b"\x00\x01\x02")
         self.timeout: Optional[float] = None
         super().__init__(name)
 
@@ -564,6 +573,13 @@ class MockGripper(Gripper):
 
     async def do_command(self, command: Mapping[str, ValueTypes], *, timeout: Optional[float] = None, **kwargs) -> Mapping[str, ValueTypes]:
         return {"command": command}
+
+    async def get_kinematics(
+        self, *, extra: Optional[Dict[str, Any]] = None, timeout: Optional[float] = None
+    ) -> Tuple[KinematicsFileFormat.ValueType, bytes]:
+        self.extra = extra
+        self.timeout = timeout
+        return self.kinematics
 
 
 class MockInputController(Controller):

@@ -10,7 +10,7 @@ else:
 from typing_extensions import Self
 
 from viam.proto.app.robot import ComponentConfig
-from viam.proto.common import GetGeometriesRequest, GetGeometriesResponse, ResourceName
+from viam.proto.common import GetGeometriesRequest, GetGeometriesResponse, GetKinematicsRequest, GetKinematicsResponse, KinematicsFileFormat, ResourceName
 
 if TYPE_CHECKING:
     from .base import ResourceBase
@@ -161,7 +161,7 @@ class Model:
             Self: The Model
         """
         regex = re.compile(r"^([\w-]+):([\w-]+):([\w-]+)$")
-        match = regex.match(model)
+        match = regex.match(string)
         if match:
             namespace = match.group(1)
             family = match.group(2)
@@ -211,3 +211,11 @@ class SupportsGetGeometries(Protocol):
     """The SupportsGetGeometries protocol defines the requirements for a resource to call get_geometries."""
 
     async def GetGeometries(self, request: GetGeometriesRequest, *, timeout: Optional[float] = None, **kwargs) -> GetGeometriesResponse: ...
+
+@runtime_checkable
+class SupportsGetKinematics(Protocol):
+    @abstractmethod
+    async def GetKinematics(
+        self, request: GetKinematicsRequest, *, timeout: Optional[float], metadata: Optional[Metadata]
+    ) -> GetKinematicsResponse:
+        ...

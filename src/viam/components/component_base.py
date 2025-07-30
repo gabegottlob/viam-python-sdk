@@ -1,12 +1,12 @@
 import abc
 from logging import Logger
-from typing import TYPE_CHECKING, Any, ClassVar, Dict, List, Mapping, Optional, SupportsBytes, SupportsFloat, Union, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Dict, List, Mapping, Optional, SupportsBytes, SupportsFloat, Tuple, Union, cast
 
 from typing_extensions import Self
 
 from viam.errors import MethodNotImplementedError
 from viam.logging import getLogger
-from viam.proto.common import Geometry
+from viam.proto.common import Geometry, KinematicsFileFormat
 from viam.resource.base import ResourceBase
 
 if TYPE_CHECKING:
@@ -63,3 +63,35 @@ class ComponentBase(abc.ABC, ResourceBase):
             List[Geometry]: The geometries associated with the Component.
         """
         raise MethodNotImplementedError("get_geometries")
+
+    @abc.abstractmethod
+    async def get_kinematics(
+        self,
+        *,
+        extra: Optional[Dict[str, Any]] = None,
+        timeout: Optional[float] = None,
+        **kwargs,
+    ) -> Tuple[KinematicsFileFormat.ValueType, bytes]:
+        """
+        Get the kinematics information associated with the component.
+
+        ::
+
+            my_component = MyComponent.from_robot(robot=machine, name="my_component")
+
+            # Get the kinematics information associated with the component.
+            kinematics = await my_component.get_kinematics()
+
+            # Get the format of the kinematics file.
+            k_file = kinematics[0]
+
+            # Get the byte contents of the file.
+            k_bytes = kinematics[1]
+
+        Returns:
+            Tuple[KinematicsFileFormat.ValueType, bytes]: A tuple containing two values; the first [0] value represents the format of the
+            file, either in URDF format (``KinematicsFileFormat.KINEMATICS_FILE_FORMAT_URDF``) or
+            Viam's kinematic parameter format (spatial vector algebra) (``KinematicsFileFormat.KINEMATICS_FILE_FORMAT_SVA``),
+            and the second [1] value represents the byte contents of the file.
+        """
+        raise MethodNotImplementedError("get_kinematics")

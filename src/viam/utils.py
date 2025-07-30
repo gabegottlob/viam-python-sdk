@@ -12,11 +12,11 @@ from google.protobuf.struct_pb2 import ListValue, Struct, Value
 from google.protobuf.timestamp_pb2 import Timestamp
 
 from viam.proto.app.data import CaptureInterval, Filter, TagsFilter
-from viam.proto.common import Geometry, GeoPoint, GetGeometriesRequest, GetGeometriesResponse, Orientation, ResourceName, Vector3
+from viam.proto.common import Geometry, GeoPoint, GetGeometriesRequest, GetGeometriesResponse, GetKinematicsRequest, GetKinematicsResponse, KinematicsFileFormat, Orientation, ResourceName, Vector3
 from viam.resource.base import ResourceBase
 from viam.resource.registry import Registry
 from viam.resource.rpc_client_base import ResourceRPCClientBase
-from viam.resource.types import API, SupportsGetGeometries
+from viam.resource.types import API, SupportsGetGeometries, SupportsGetKinematics
 
 if sys.version_info >= (3, 9):
     from collections.abc import Callable
@@ -175,6 +175,19 @@ async def get_geometries(
     request = GetGeometriesRequest(name=name, extra=dict_to_struct(extra))
     response: GetGeometriesResponse = await client.GetGeometries(request, timeout=timeout, metadata=md)
     return [geometry for geometry in response.geometries]
+
+
+async def get_kinematics(
+    client: SupportsGetKinematics,
+    name: str,
+    extra: Optional[Dict[str, Any]] = None,
+    timeout: Optional[float] = None,
+    metadata: ResourceRPCClientBase.Metadata = ResourceRPCClientBase.Metadata(),
+) -> Tuple[KinematicsFileFormat.ValueType, bytes]:
+    md = metadata.proto
+    request = GetKinematicsRequest(name=name, extra=dict_to_struct(extra))
+    response: GetKinematicsResponse = await client.GetKinematics(request, timeout=timeout, metadata=md)
+    return response.format, response.kinematics_data
 
 
 def sensor_readings_native_to_value(readings: Mapping[str, Any]) -> Mapping[str, Value]:

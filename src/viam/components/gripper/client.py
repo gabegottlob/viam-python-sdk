@@ -1,8 +1,8 @@
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional, Tuple
 
 from grpclib.client import Channel
 
-from viam.proto.common import DoCommandRequest, DoCommandResponse, Geometry
+from viam.proto.common import DoCommandRequest, DoCommandResponse, Geometry, GetKinematicsRequest, GetKinematicsResponse, KinematicsFileFormat
 from viam.proto.component.gripper import (
     GrabRequest,
     GrabResponse,
@@ -13,7 +13,7 @@ from viam.proto.component.gripper import (
     StopRequest,
 )
 from viam.resource.rpc_client_base import ReconfigurableResourceRPCClientBase
-from viam.utils import ValueTypes, dict_to_struct, get_geometries, struct_to_dict
+from viam.utils import ValueTypes, dict_to_struct, get_geometries, get_kinematics, struct_to_dict
 
 from .gripper import Gripper
 
@@ -83,3 +83,13 @@ class GripperClient(Gripper, ReconfigurableResourceRPCClientBase):
     async def get_geometries(self, *, extra: Optional[Dict[str, Any]] = None, timeout: Optional[float] = None, **kwargs) -> List[Geometry]:
         md = kwargs.get("metadata", self.Metadata())
         return await get_geometries(self.client, self.name, extra, timeout, md)
+
+    async def get_kinematics(
+        self,
+        *,
+        extra: Optional[Dict[str, Any]] = None,
+        timeout: Optional[float] = None,
+        **kwargs,
+    ) -> Tuple[KinematicsFileFormat.ValueType, bytes]:
+        md = kwargs.get("metadata", self.Metadata())
+        return await get_kinematics(self.client, self.name, extra, timeout, md)
