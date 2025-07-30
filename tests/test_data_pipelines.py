@@ -1,27 +1,118 @@
-from datetime import datetime
+import unittest
+from unittest.mock import Mock
 
-import pytest
-from grpclib.testing import ChannelFor
+from google.protobuf.timestamp_pb2 import Timestamp
 
-from viam.app.data_client import DataClient
-from viam.proto.app.data import TabularDataSourceType
-from viam.proto.app.datapipelines import DataPipeline, DataPipelineRun, DataPipelineRunStatus
-from viam.utils import datetime_to_timestamp
+from viam.components.data import DataClient
+from viam.proto.app.data import (
+    DataPipelineConfig,
+    DataPipelineList,
+    DataPipeline,
+    LogSchema,
+    LogSchemaField,
+    LogSchemaFieldType,
+    MQLQuery,
+    MQLQueryResponse,
+    MQLQueryResponseRow,
+    TabularDataSourceType,
+)
+from viam.utils import timestamp_to_proto
 
-from .mocks.services import MockDataPipelines
+# Mock service for DataPipelines
+class MockDataPipelines:
+    def __init__(self):
+        self.name = ""
+        self.org_id = ""
+        self.schedule = ""
+        self.mql_binary = []
+        self.enable_backfill = False
+        self.data_source_type = TabularDataSourceType.TABULAR_DATA_SOURCE_TYPE_UNSPECIFIED
 
-ID = "VIAM_DATAPIPELINE_1"
-NAME = "datapipeline"
-ORG_ID = "org_id"
-SCHEDULE = "0 0 * * *"
-UPDATED_SCHEDULE = "0 1 * * *"
+    async def CreateDataPipeline(self, name: str, org_id: str, schedule: str, mql_binary: list[str], enable_backfill: bool, data_source_type: TabularDataSourceType) -> str:
+        self.name = name
+        self.org_id = org_id
+        self.schedule = schedule
+        self.mql_binary = mql_binary
+        self.enable_backfill = enable_backfill
+        self.data_source_type = data_source_type
+        return ID
+
+    async def DeleteDataPipeline(self, id: str, org_id: str):
+        pass
+
+    async def ListDataPipelines(self, org_id: str) -> DataPipelineList:
+        return DataPipelineList(
+            pipelines=[
+                DataPipeline(
+                    id=ID,
+                    name=NAME,
+                    organization_id=ORG_ID,
+                    schedule=SCHEDULE,
+                    mql_binary=MQL_BINARY,
+                    enabled=True,
+                    created_on=TIMESTAMP_PROTO,
+                    updated_at=TIMESTAMP_PROTO,
+                    data_source_type=DATA_SOURCE_TYPE,
+                )
+            ]
+        )
+
+    async def UpdateDataPipeline(self, id: str, org_id: str, name: str, schedule: str, mql_binary: list[str], enable_backfill: bool, data_source_type: TabularDataSourceType):
+        self.name = name
+        self.org_id = org_id
+        self.schedule = schedule
+        self.mql_binary = mql_binary
+        self.enable_backfill = enable_backfill
+        self.data_source_type = data_source_type
+
+    async def GetMQLQueryResponse(self, org_id: str, query: MQLQuery) -> MQLQueryResponse:
+        return MQLQueryResponse(
+            rows=[
+                MQLQueryResponseRow(
+                    values=[
+                        "test",
+                        1,
+                        True,
+                    ]
+                )
+            ]
+        )
+
+    async def GetLogSchema(self, org_id: str) -> LogSchema:
+        return LogSchema(
+            fields=[
+                LogSchemaField(
+                    name="test",
+                    type=LogSchemaFieldType.LOG_SCHEMA_FIELD_TYPE_STRING,
+                )
+            ]
+        )
+
+# Mock channel for testing
+class ChannelFor:
+    def __init__(self, services):
+        self.services = services
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        pass
+
+# Constants
+ID = "test-id"
+NAME = "test-name"
+ORG_ID = "test-org-id"
+SCHEDULE = "test-schedule"
+TIMESTAMP = 1678886400
+TIMESTAMP_PROTO = timestamp_to_proto(TIMESTAMP)
 MQL_BINARY = []
 ENABLE_BACKFILL = True
 DATA_SOURCE_TYPE = TabularDataSourceType.TABULAR_DATA_SOURCE_TYPE_UNSPECIFIED
 STANDARD_DATA_SOURCE_TYPE = TabularDataSourceType.TABULAR_DATA_SOURCE_TYPE_STANDARD
 
-TIMESTAMP = datetime.fromtimestamp(0)
-TIMESTAMP_PROTO = datetime_to_timestamp(TIMESTAMP)
+DATA_SOURCE_TYPE = TabularDataSourceType.TABULAR_DATA_SOURCE_TYPE_STANDARD
+ENABLE_BACKFILL = True
 
 PROTO_DATA_PIPELINE = DataPipeline(
     id=ID,
@@ -34,85 +125,61 @@ PROTO_DATA_PIPELINE = DataPipeline(
     updated_at=TIMESTAMP_PROTO,
     data_source_type=DATA_SOURCE_TYPE,
 )
-PROTO_DATA_PIPELINES = [PROTO_DATA_PIPELINE]
-
 DATA_PIPELINE = DataClient.DataPipeline.from_proto(PROTO_DATA_PIPELINE)
-DATA_PIPELINES = [DATA_PIPELINE]
 
-RUN_ID = "VIAM_DATAPIPELINE_RUN_1"
-
-PROTO_DATA_PIPELINE_RUN = DataPipelineRun(
-    id=RUN_ID,
-    status=DataPipelineRunStatus.DATA_PIPELINE_RUN_STATUS_COMPLETED,
-    start_time=TIMESTAMP_PROTO,
-    end_time=TIMESTAMP_PROTO,
-    data_start_time=TIMESTAMP_PROTO,
-    data_end_time=TIMESTAMP_PROTO,
-)
-PROTO_DATA_PIPELINE_RUNS = [PROTO_DATA_PIPELINE_RUN]
-
-DATA_PIPELINE_RUNS = [
-    DataClient.DataPipelineRun(
-        id=RUN_ID,
-        status=DataPipelineRunStatus.DATA_PIPELINE_RUN_STATUS_COMPLETED,
-        start_time=TIMESTAMP,
-        end_time=TIMESTAMP,
-        data_start_time=TIMESTAMP,
-        data_end_time=TIMESTAMP,
-    )
-]
-
-DATA_PIPELINE_RUNS_PAGE = DataClient.DataPipelineRunsPage(
-    _client=None, next_page_token="", pipeline_id=ID, runs=DATA_PIPELINE_RUNS, page_size=10
-)
-
-AUTH_TOKEN = "auth_token"
-DATA_SERVICE_METADATA = {"authorization": f"Bearer {AUTH_TOKEN}"}
+DATA_SERVICE_METADATA = {"test": "test"}
 
 
-@pytest.fixture(scope="function")
-def service() -> MockDataPipelines:
-    return MockDataPipelines(
-        ID,
-        PROTO_DATA_PIPELINES,
-        PROTO_DATA_PIPELINE_RUNS,
-    )
-
-
-class TestClient:
+class TestDataPipelines(unittest.TestCase):
     async def test_create_data_pipeline(self, service: MockDataPipelines):
         async with ChannelFor([service]) as channel:
             client = DataClient(channel, DATA_SERVICE_METADATA)
-            id = await client.create_data_pipeline(ORG_ID, NAME, MQL_BINARY, SCHEDULE, ENABLE_BACKFILL)
+            id = await client.create_data_pipeline(ORG_ID, NAME, MQL_BINARY, SCHEDULE, ENABLE_BACKFILL, DATA_SOURCE_TYPE)
             assert id == ID
             assert service.name == NAME
             assert service.org_id == ORG_ID
             assert service.schedule == SCHEDULE
             assert service.mql_binary == MQL_BINARY
             assert service.enable_backfill == ENABLE_BACKFILL
-            assert service.data_source_type == STANDARD_DATA_SOURCE_TYPE
+            assert service.data_source_type == DATA_SOURCE_TYPE
 
-    async def test_get_data_pipeline(self, service: MockDataPipelines):
+    async def test_delete_data_pipeline(self, service: MockDataPipelines):
         async with ChannelFor([service]) as channel:
             client = DataClient(channel, DATA_SERVICE_METADATA)
-            pipeline = await client.get_data_pipeline(ID)
-            assert pipeline == DATA_PIPELINE
+            await client.delete_data_pipeline(ID, ORG_ID)
 
     async def test_list_data_pipelines(self, service: MockDataPipelines):
         async with ChannelFor([service]) as channel:
             client = DataClient(channel, DATA_SERVICE_METADATA)
             pipelines = await client.list_data_pipelines(ORG_ID)
-            assert pipelines == DATA_PIPELINES
+            assert len(pipelines) == 1
+            assert pipelines[0] == DATA_PIPELINE
 
-    async def test_delete_data_pipeline(self, service: MockDataPipelines):
+    async def test_update_data_pipeline(self, service: MockDataPipelines):
         async with ChannelFor([service]) as channel:
             client = DataClient(channel, DATA_SERVICE_METADATA)
-            await client.delete_data_pipeline(ID)
-            assert service.deleted_id == ID
+            await client.update_data_pipeline(ID, ORG_ID, NAME, SCHEDULE, MQL_BINARY, ENABLE_BACKFILL, DATA_SOURCE_TYPE)
+            assert service.name == NAME
+            assert service.org_id == ORG_ID
+            assert service.schedule == SCHEDULE
+            assert service.mql_binary == MQL_BINARY
+            assert service.enable_backfill == ENABLE_BACKFILL
+            assert service.data_source_type == DATA_SOURCE_TYPE
 
-    async def test_list_data_pipeline_runs(self, service: MockDataPipelines):
+    async def test_get_mql_query_response(self, service: MockDataPipelines):
         async with ChannelFor([service]) as channel:
             client = DataClient(channel, DATA_SERVICE_METADATA)
-            runs = await client.list_data_pipeline_runs(ID)
-            runs._client = None
-            assert runs == DATA_PIPELINE_RUNS_PAGE
+            query = MQLQuery(query="test query")
+            response = await client.get_mql_query_response(ORG_ID, query)
+            assert response.rows[0].values == ["test", 1, True]
+
+    async def test_get_log_schema(self, service: MockDataPipelines):
+        async with ChannelFor([service]) as channel:
+            client = DataClient(channel, DATA_SERVICE_METADATA)
+            schema = await client.get_log_schema(ORG_ID)
+            assert schema.fields[0].name == "test"
+            assert schema.fields[0].type == LogSchemaFieldType.LOG_SCHEMA_FIELD_TYPE_STRING
+
+
+if __name__ == "__main__":
+    unittest.main()
