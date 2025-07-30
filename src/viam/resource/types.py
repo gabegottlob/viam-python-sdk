@@ -1,5 +1,6 @@
 import re
 import sys
+from abc import abstractmethod
 from typing import TYPE_CHECKING, Callable, ClassVar, Mapping, Optional, Protocol, Sequence, Tuple, runtime_checkable
 
 if sys.version_info >= (3, 10):
@@ -11,6 +12,8 @@ from typing_extensions import Self
 
 from viam.proto.app.robot import ComponentConfig
 from viam.proto.common import GetGeometriesRequest, GetGeometriesResponse, ResourceName
+from viam.proto.common import GetKinematicsRequest, GetKinematicsResponse, KinematicsFileFormat
+from viam.proto.common import Metadata
 
 if TYPE_CHECKING:
     from .base import ResourceBase
@@ -211,3 +214,12 @@ class SupportsGetGeometries(Protocol):
     """The SupportsGetGeometries protocol defines the requirements for a resource to call get_geometries."""
 
     async def GetGeometries(self, request: GetGeometriesRequest, *, timeout: Optional[float] = None, **kwargs) -> GetGeometriesResponse: ...
+
+
+@runtime_checkable
+class SupportsGetKinematics(Protocol):
+    @abstractmethod
+    async def GetKinematics(
+        self, request: GetKinematicsRequest, *, timeout: Optional[float], metadata: Optional[Metadata]
+    ) -> GetKinematicsResponse:
+        ...

@@ -1,13 +1,7 @@
 from grpclib.server import Stream
 
-from viam.proto.common import (
-    DoCommandRequest,
-    DoCommandResponse,
-    GetGeometriesRequest,
-    GetGeometriesResponse,
-    GetKinematicsRequest,
-    GetKinematicsResponse,
-)
+from viam.proto.common import DoCommandRequest, DoCommandResponse, GetGeometriesRequest, GetGeometriesResponse
+from viam.proto.common import GetKinematicsRequest, GetKinematicsResponse
 from viam.proto.component.gripper import (
     GrabRequest,
     GrabResponse,
@@ -99,6 +93,7 @@ class GripperRPCService(GripperServiceBase, ResourceRPCServiceBase[Gripper]):
         geometries = await gripper.get_geometries(extra=struct_to_dict(request.extra), timeout=timeout)
         response = GetGeometriesResponse(geometries=geometries)
         await stream.send_message(response)
+
 
     async def GetKinematics(self, stream: Stream[GetKinematicsRequest, GetKinematicsResponse]) -> None:
         request = await stream.recv_message()
