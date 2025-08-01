@@ -4,7 +4,7 @@ from grpclib.testing import ChannelFor
 from viam.components.generic.service import GenericRPCService
 from viam.components.gripper import Gripper, GripperClient
 from viam.components.gripper.service import GripperRPCService
-from viam.proto.common import DoCommandRequest, DoCommandResponse, GetGeometriesRequest, GetGeometriesResponse
+from viam.proto.common import DoCommandRequest, DoCommandResponse, GetGeometriesRequest, GetGeometriesResponse, GetKinematicsRequest, GetKinematicsResponse
 from viam.proto.component.gripper import (
     GrabRequest,
     GrabResponse,
@@ -13,6 +13,7 @@ from viam.proto.component.gripper import (
     IsMovingResponse,
     OpenRequest,
     StopRequest,
+    KinematicsFileFormat,
 )
 from viam.resource.manager import ResourceManager
 from viam.utils import dict_to_struct, struct_to_dict
@@ -23,7 +24,9 @@ from .mocks.components import GEOMETRIES, MockGripper
 
 @pytest.fixture(scope="function")
 def gripper() -> MockGripper:
-    return MockGripper("gripper")
+    mock_gripper = MockGripper("gripper")
+    mock_gripper.kinematics = (KinematicsFileFormat.KINEMATICS_FILE_FORMAT_SVA, b"\x00\x01\x02")
+    return mock_gripper
 
 
 @pytest.fixture(scope="function")
@@ -74,6 +77,11 @@ class TestGripper:
         extra = {"foo": "bar", "baz": [1, 2, 3]}
         await gripper.open(timeout=1.1, extra=extra)
         assert gripper.extra == extra
+
+    async def test_get_kinematics(self, gripper: MockGripper):
+        kd = await gripper.get_kinematics(extra={"1": "2"})
+        assert kd == gripper.kinematics
+        assert gripper.extra == {"1": "2"}
 
     async def test_get_geometries(self, gripper: MockGripper):
         geometries = await gripper.get_geometries()
@@ -139,6 +147,13 @@ class TestService:
             result = struct_to_dict(response.result)
             assert result == {"command": command}
 
+    async def test_get_kinematics(self, gripper: MockGripper, service: GripperRPCService):
+        async with ChannelFor([service]) as channel:
+            client = GripperServiceStub(channel)
+            request = GetKinematicsRequest(name=gripper.name)
+            response: GetKinematicsResponse = await client.GetKinematics(request)
+            assert (response.format, response.kinematics_data) == gripper.kinematics
+
     async def test_get_geometries(self, gripper: MockGripper, service: GripperRPCService):
         async with ChannelFor([service]) as channel:
             client = GripperServiceStub(channel)
@@ -195,6 +210,13 @@ class TestClient:
             extra = {"foo": "bar", "baz": [1, 2, 3]}
             await client.open(timeout=1.1, extra=extra)
             assert gripper.extra == extra
+
+    async def test_get_kinematics(self, gripper: MockGripper, service: GripperRPCService):
+        async with ChannelFor([service]) as channel:
+            client = GripperClient(gripper.name, channel)
+            kd = await client.get_kinematics(extra={"1": "2"})
+            assert kd == gripper.kinematics
+            assert gripper.extra == {"1": "2"}
 
     async def test_get_geometries(self, gripper: MockGripper, service: GripperRPCService):
         async with ChannelFor([service]) as channel:
