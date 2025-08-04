@@ -1,8 +1,9 @@
 import abc
-from typing import Any, Dict, Final, Optional
+from typing import Any, Dict, Final, Optional, Tuple
 
 from viam.components.component_base import ComponentBase
 from viam.resource.types import API, RESOURCE_NAMESPACE_RDK, RESOURCE_TYPE_COMPONENT
+from viam.proto.common import KinematicsFileFormat
 
 
 class Gripper(ComponentBase):
@@ -110,5 +111,29 @@ class Gripper(ComponentBase):
             bool: Whether the gripper is moving.
 
         For more information, see `Gripper component <https://docs.viam.com/dev/reference/apis/components/gripper/#is_moving>`_.
+        """
+        ...
+
+    @abc.abstractmethod
+    async def get_kinematics(
+        self,
+        *,
+        extra: Optional[Dict[str, Any]] = None,
+        timeout: Optional[float] = None,
+        **kwargs,
+    ) -> Tuple[KinematicsFileFormat.ValueType, bytes]:
+        """
+        Get the kinematics of the gripper.
+
+        ::
+
+            my_gripper = Gripper.from_robot(robot=machine, name="my_gripper")
+
+            # Get the kinematics of the gripper.
+            format, data = await my_gripper.get_kinematics()
+            print(f"Kinematics format: {format}, data: {data}")
+
+        Returns:
+            Tuple[KinematicsFileFormat.ValueType, bytes]: The kinematics file format and the kinematics data.
         """
         ...
