@@ -45,6 +45,8 @@ GEOMETRIES = [
     Geometry(center=Pose(x=1, y=2, z=3, o_x=2, o_y=3, o_z=4, theta=20), capsule=Capsule(radius_mm=3, length_mm=8)),
 ]
 
+KINEMATICS = (KinematicsFileFormat.KINEMATICS_FILE_FORMAT_SVA, b"\x00\x01\x02")
+
 
 class MockArm(Arm):
     def __init__(self, name: str):
@@ -534,6 +536,7 @@ class MockGripper(Gripper):
         self.extra = None
         self.is_stopped = True
         self.timeout: Optional[float] = None
+        self.kinematics = KINEMATICS
         super().__init__(name)
 
     async def open(self, *, extra: Optional[Dict[str, Any]] = None, timeout: Optional[float] = None, **kwargs):
@@ -556,6 +559,13 @@ class MockGripper(Gripper):
 
     async def is_moving(self) -> bool:
         return not self.is_stopped
+
+    async def get_kinematics(
+        self, *, extra: Optional[Dict[str, Any]] = None, timeout: Optional[float] = None
+    ) -> Tuple[KinematicsFileFormat.ValueType, bytes]:
+        self.extra = extra
+        self.timeout = timeout
+        return self.kinematics
 
     async def get_geometries(self, *, extra: Optional[Dict[str, Any]] = None, timeout: Optional[float] = None) -> List[Geometry]:
         self.extra = extra
