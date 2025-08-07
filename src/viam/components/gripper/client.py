@@ -17,8 +17,7 @@ from viam.proto.component.gripper import (
 from viam.resource.rpc_client_base import ReconfigurableResourceRPCClientBase
 from viam.utils import ValueTypes, dict_to_struct, get_geometries, struct_to_dict
 
-from . import KinematicsFileFormat
-from .gripper import Gripper
+from .gripper import Gripper, KinematicsFileFormat
 
 
 class GripperClient(Gripper, ReconfigurableResourceRPCClientBase):
@@ -96,11 +95,7 @@ class GripperClient(Gripper, ReconfigurableResourceRPCClientBase):
         return await get_geometries(self.client, self.name, extra, timeout, md)
 
     async def get_kinematics(
-        self,
-        *,
-        extra: Optional[Dict[str, Any]] = None,
-        timeout: Optional[float] = None,
-        **kwargs,
+        self, *, extra: Optional[Dict[str, Any]] = None, timeout: Optional[float] = None, **kwargs
     ) -> Tuple[KinematicsFileFormat.ValueType, bytes]:
         md = kwargs.get("metadata", self.Metadata()).proto
         request = GetKinematicsRequest(name=self.name, extra=dict_to_struct(extra))

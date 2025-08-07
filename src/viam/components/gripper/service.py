@@ -1,13 +1,6 @@
 from grpclib.server import Stream
 
-from viam.proto.common import (
-    DoCommandRequest,
-    DoCommandResponse,
-    GetGeometriesRequest,
-    GetGeometriesResponse,
-    GetKinematicsRequest,
-    GetKinematicsResponse,
-)
+from viam.proto.common import DoCommandRequest, DoCommandResponse, GetGeometriesRequest, GetGeometriesResponse, GetKinematicsRequest, GetKinematicsResponse
 from viam.proto.component.gripper import (
     GrabRequest,
     GrabResponse,
