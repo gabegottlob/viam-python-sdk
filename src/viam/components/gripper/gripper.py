@@ -1,9 +1,9 @@
 import abc
-from dataclasses import dataclass
 from typing import Any, Dict, Final, Optional, Tuple
 
 from viam.components.component_base import ComponentBase
 from viam.resource.types import API, RESOURCE_NAMESPACE_RDK, RESOURCE_TYPE_COMPONENT
+from viam.proto.common import KinematicsFileFormat
 
 from . import KinematicsFileFormat
 
@@ -163,27 +163,19 @@ class Gripper(ComponentBase):
         **kwargs,
     ) -> Tuple[KinematicsFileFormat.ValueType, bytes]:
         """
-        Get the kinematics information associated with the gripper.
+        Get the kinematics of the gripper.
 
         ::
 
             my_gripper = Gripper.from_robot(robot=machine, name="my_gripper")
 
-            # Get the kinematics information associated with the gripper.
-            kinematics = await my_gripper.get_kinematics()
-
-            # Get the format of the kinematics file.
-            k_file = kinematics[0]
-
-            # Get the byte contents of the file.
-            k_bytes = kinematics[1]
+            # Get the kinematics of the gripper.
+            format, data = await my_gripper.get_kinematics()
+            print(f"Kinematics format: {format}, data length: {len(data)}")
 
         Returns:
-            Tuple[KinematicsFileFormat.ValueType, bytes]: A tuple containing two values; the first [0] value represents the format of the
-            file, either in URDF format (``KinematicsFileFormat.KINEMATICS_FILE_FORMAT_URDF``) or
-            Viam's kinematic parameter format (spatial vector algebra) (``KinematicsFileFormat.KINEMATICS_FILE_FORMAT_SVA``),
-            and the second [1] value represents the byte contents of the file.
+            Tuple[KinematicsFileFormat.ValueType, bytes]: The kinematics of the gripper, in either URDF format or in Viam’s kinematic parameter format (spatial vector algebra) and the byte contents of the file.
 
-        For more information, see `Gripper component <https://docs.viam.com/dev/reference/apis/components/gripper/#getkinematics>`_.
+        For more information, see `Gripper component <https://docs.viam.com/dev/reference/apis/components/gripper/#get_kinematics>`_.
         """
         ...

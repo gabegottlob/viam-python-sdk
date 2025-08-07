@@ -535,6 +535,7 @@ class MockGripper(Gripper):
         self.holding_something = False
         self.extra = None
         self.is_stopped = True
+        self.kinematics = (KinematicsFileFormat.KINEMATICS_FILE_FORMAT_SVA, b"\x00\x01\x02")
         self.timeout: Optional[float] = None
         super().__init__(name)
 
@@ -566,6 +567,13 @@ class MockGripper(Gripper):
 
     async def is_moving(self) -> bool:
         return not self.is_stopped
+
+    async def get_kinematics(
+        self, *, extra: Optional[Dict[str, Any]] = None, timeout: Optional[float] = None
+    ) -> Tuple[KinematicsFileFormat.ValueType, bytes]:
+        self.extra = extra
+        self.timeout = timeout
+        return self.kinematics
 
     async def get_geometries(self, *, extra: Optional[Dict[str, Any]] = None, timeout: Optional[float] = None) -> List[Geometry]:
         self.extra = extra

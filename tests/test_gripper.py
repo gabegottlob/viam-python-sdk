@@ -4,14 +4,7 @@ from grpclib.testing import ChannelFor
 from viam.components.generic.service import GenericRPCService
 from viam.components.gripper import Gripper, GripperClient, KinematicsFileFormat
 from viam.components.gripper.service import GripperRPCService
-from viam.proto.common import (
-    DoCommandRequest,
-    DoCommandResponse,
-    GetGeometriesRequest,
-    GetGeometriesResponse,
-    GetKinematicsRequest,
-    GetKinematicsResponse,
-)
+from viam.proto.common import DoCommandRequest, DoCommandResponse, GetGeometriesRequest, GetGeometriesResponse, GetKinematicsRequest, GetKinematicsResponse
 from viam.proto.component.gripper import (
     GrabRequest,
     GrabResponse,
@@ -87,10 +80,10 @@ class TestGripper:
         assert geometries == GEOMETRIES
 
     async def test_get_kinematics(self, gripper: MockGripper):
-        kinematics = (KinematicsFileFormat.KINEMATICS_FILE_FORMAT_SVA, b"\x00\x01\x02")
-        kd = await gripper.get_kinematics(extra={"1": "2"})
-        assert kd == kinematics
-        assert gripper.extra == {"1": "2"}
+        format, data = await gripper.get_kinematics(timeout=1.23)
+        assert format == KinematicsFileFormat.KINEMATICS_FILE_FORMAT_SVA
+        assert data == b"\x00\x01\x02"
+        assert gripper.timeout == loose_approx(1.23)
 
 
 class TestService:
@@ -162,10 +155,11 @@ class TestService:
     async def test_get_kinematics(self, gripper: MockGripper, service: GripperRPCService):
         async with ChannelFor([service]) as channel:
             client = GripperServiceStub(channel)
-            kinematics = (KinematicsFileFormat.KINEMATICS_FILE_FORMAT_SVA, b"\x00\x01\x02")
             request = GetKinematicsRequest(name=gripper.name)
-            response: GetKinematicsResponse = await client.GetKinematics(request)
-            assert (response.format, response.kinematics_data) == kinematics
+            response: GetKinematicsResponse = await client.GetKinematics(request, timeout=4.56)
+            assert response.format == KinematicsFileFormat.KINEMATICS_FILE_FORMAT_SVA
+            assert response.kinematics_data == b"\x00\x01\x02"
+            assert gripper.timeout == loose_approx(4.56)
 
 
 class TestClient:
@@ -226,7 +220,7 @@ class TestClient:
     async def test_get_kinematics(self, gripper: MockGripper, service: GripperRPCService):
         async with ChannelFor([service]) as channel:
             client = GripperClient(gripper.name, channel)
-            kinematics = (KinematicsFileFormat.KINEMATICS_FILE_FORMAT_SVA, b"\x00\x01\x02")
-            kd = await client.get_kinematics(extra={"1": "2"})
-            assert kd == kinematics
-            assert gripper.extra == {"1": "2"}
+            format, data = await client.get_kinematics(timeout=7.89)
+            assert format == KinematicsFileFormat.KINEMATICS_FILE_FORMAT_SVA
+            assert data == b"\x00\x01\x02"
+            assert gripper.timeout == loose_approx(7.89)
